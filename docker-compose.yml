@@ -1,10 +1,9 @@
 services:
   wireguard-ui:
+    build:
+      context: .
+      dockerfile: Dockerfile
     image: ghcr.io/ahmaddxb/wireguard-ui:latest
-    # Or build locally:
-    # build:
-    #   context: .
-    #   dockerfile: Dockerfile
     container_name: wireguard-ui
     restart: unless-stopped
     network_mode: host # Allows container to bind to host interface ports
