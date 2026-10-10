@@ -51,9 +51,13 @@ function switchTab(tabName) {
     if (!tab && tabName === 'sites') {
         tab = document.getElementById('tab-sites') || document.getElementById('tab-sitetosite');
     }
+    if (!tab && tabName === 'notifications') {
+        tab = document.getElementById('tab-settings');
+    }
+    const navBtn = btn || document.querySelector(`.nav-item[data-tab="settings"]`);
 
-    if (btn && tab) {
-        btn.classList.add('active');
+    if (tab) {
+        if (navBtn) navBtn.classList.add('active');
         tab.classList.add('active');
 
         // Update page title
