@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WireGuard WebUI | Network & Tunnel Portal</title>
+    <link rel="stylesheet" href="style.css?v=1.0.3">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body class="dark-theme">
+    <div class="app-layout">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="brand">
+                <div class="logo-icon">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="2" y="6" width="20" height="12" rx="3"></rect>
+                        <path d="M6 12h4m4 0h4"></path>
+                    </svg>
+                </div>
+                <div class="brand-text">
+                    <span class="brand-title">WireGuard</span>
+                    <span class="brand-subtitle">Control Portal</span>
+                </div>
+            </div>
+
+            <nav class="nav-menu">
+                <button class="nav-item active" data-tab="overview">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path></svg>
+                    <span>Overview</span>
+                </button>
+                <button class="nav-item" data-tab="clients">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                    <span>Clients (Roadwarrior)</span>
+                </button>
+                <button class="nav-item" data-tab="sites">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 16v1a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h11a2 2 0 0 1 2 2v1"></path><path d="M18 8l4 4-4 4"></path><path d="M8 12h14"></path></svg>
+                    <span>Site-to-Site Tunnels</span>
+                </button>
+                <button class="nav-item" data-tab="topology">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="5" r="3"></circle><circle cx="5" cy="19" r="3"></circle><circle cx="19" cy="19" r="3"></circle><path d="M8.59 13.51l-3.83 3.83"></path><path d="M15.41 13.51l3.83 3.83"></path><path d="M12 8v5"></path></svg>
+                    <span>Network Topology</span>
+                </button>
+                <button class="nav-item" data-tab="settings">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                    <span>Interface Settings</span>
+                </button>
+                <button class="nav-item" data-tab="notifications">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+                    <span>Notifications & Alerts</span>
+                </button>
+                <button class="nav-item" data-tab="audit">
+                    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+                    <span>Audit Logs</span>
+                </button>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="system-status-pill">
+                    <span class="status-dot green-pulse"></span>
+                    <span id="status-text">Daemon Active</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="top-header">
+                <div class="header-left">
+                    <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+                        <h1 id="page-title" style="margin: 0;">Overview Dashboard</h1>
+                        <!-- Interface Switcher Tabs -->
+                        <div id="interface-switcher" class="interface-switcher-bar">
+                            <div id="interface-tabs" class="interface-tabs">
+                                <!-- Dynamic interface buttons: [ 🛡️ wg0 ] [ 🌐 wg1 ] -->
+                            </div>
+                        </div>
+                    </div>
+                    <p id="page-subtitle" class="subtitle" style="margin-top: 0.25rem;">System state, active connections & bandwidth telemetry</p>
+                </div>
+            </header>
+
+            <!-- TAB 1: OVERVIEW -->
+            <div id="tab-overview" class="tab-content active">
+                <div class="metrics-grid">
+                    <div class="metric-card">
+                        <div class="metric-header">
+                            <span class="metric-title">Active Clients</span>
+                            <span class="metric-badge green">Roadwarrior</span>
+                        </div>
+                        <div class="metric-value" id="metric-clients">0 / 0</div>
+                        <div class="metric-subtext">Registered VPN devices</div>
+                    </div>
+
+                    <div class="metric-card">
+                        <div class="metric-header">
+                            <span class="metric-title">Site-to-Site Tunnels</span>
+                            <span class="metric-badge purple">Gateways</span>
+                        </div>
+                        <div class="metric-value" id="metric-sites">0 / 0</div>
+                        <div class="metric-subtext">Active branch routes</div>
+                    </div>
+
+                    <div class="metric-card">
+                        <div class="metric-header">
+                            <span class="metric-title">Interface Listen Port</span>
+                            <span class="metric-badge cyan">UDP</span>
+                        </div>
+                        <div class="metric-value" id="metric-port">51820</div>
+                        <div class="metric-subtext" id="metric-pool">Pool: 10.8.0.1/24</div>
+                    </div>
+
+                    <div class="metric-card">
+                        <div class="metric-header">
+                            <span class="metric-title">Realtime Throughput</span>
+                        </div>
+                        <div class="throughput-split">
+                            <div class="throughput-item">
+                                <div class="throughput-dir rx">↓ Inbound</div>
+                                <div class="throughput-speed rx" id="metric-rx-speed">0 B/s</div>
+                                <div class="throughput-total" id="metric-rx-total">0 B total</div>
+                            </div>
+                            <div class="throughput-divider"></div>
+                            <div class="throughput-item">
+                                <div class="throughput-dir tx">↑ Outbound</div>
+                                <div class="throughput-speed tx" id="metric-tx-speed">0 B/s</div>
+                                <div class="throughput-total" id="metric-tx-total">0 B total</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 24h Bandwidth History Chart -->
+                <div class="section-card" style="position: relative; overflow: visible;">
+                    <div class="section-header">
+                        <div style="display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;">
+                            <h2>24-Hour Bandwidth Telemetry</h2>
+                            <span class="tag">1-Min Interval Samples</span>
+                        </div>
+                        <div class="chart-stats-summary" id="chart-stats-summary">
+                            <span class="chart-stat-item"><span class="stat-dot" style="background: var(--accent-green);"></span> Peak Rx: <strong id="chart-peak-rx" style="color: var(--accent-green); margin-left: 0.25rem;">0 B/s</strong></span>
+                            <span class="chart-stat-item"><span class="stat-dot" style="background: var(--accent-purple);"></span> Peak Tx: <strong id="chart-peak-tx" style="color: var(--accent-purple); margin-left: 0.25rem;">0 B/s</strong></span>
+                        </div>
+                    </div>
+                    <div class="chart-container" id="bandwidth-chart-wrapper" style="position: relative; height: 210px; width: 100%; user-select: none; overflow: visible;">
+                        <svg id="bandwidth-chart" width="100%" height="100%" viewBox="0 0 800 210" preserveAspectRatio="none" style="overflow: visible; display: block;">
+                            <defs>
+                                <linearGradient id="rxGrad" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="0%" stop-color="#10b981" stop-opacity="0.35"/>
+                                    <stop offset="100%" stop-color="#10b981" stop-opacity="0.0"/>
+                                </linearGradient>
+                                <linearGradient id="txGrad" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="0%" stop-color="#a855f7" stop-opacity="0.35"/>
+                                    <stop offset="100%" stop-color="#a855f7" stop-opacity="0.0"/>
+                                </linearGradient>
+                            </defs>
+                        </svg>
+                        <div id="chart-tooltip" class="chart-tooltip" style="display: none;"></div>
+                    </div>
+                    <div style="display: flex; gap: 1.5rem; justify-content: space-between; align-items: center; margin-top: 0.75rem; font-size: 0.8rem; font-weight: 500; flex-wrap: wrap;">
+                        <div style="color: var(--text-dim); font-size: 0.75rem;" id="chart-time-range-label">
+                            Past 24 Hours • 1-Minute Interval Sampling
+                        </div>
+                        <div style="display: flex; gap: 1.5rem; justify-content: flex-end;">
+                            <span style="color: var(--accent-green); display: inline-flex; align-items: center; gap: 0.4rem;">
+                                <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--accent-green); box-shadow: 0 0 6px var(--accent-green);"></span> Inbound (Rx)
+                            </span>
+                            <span style="color: var(--accent-purple); display: inline-flex; align-items: center; gap: 0.4rem;">
+                                <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--accent-purple); box-shadow: 0 0 6px var(--accent-purple);"></span> Outbound (Tx)
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Peers List -->
+                <div class="section-card">
+                    <div class="section-header">
+                        <h2>Connected Peers Overview</h2>
+                        <span class="tag">Real-Time Telemetry</span>
+                    </div>
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Peer Name</th>
+                                    <th>Type</th>
+                                    <th>Allowed IPs / Routes</th>
+                                    <th>Handshake</th>
+                                    <th>Data Transfer</th>
+                                    <th>Live Speed</th>
+                                </tr>
+                            </thead>
+                            <tbody id="overview-peers-table">
+                                <!-- Dynamic rows -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 2: CLIENT PEERS -->
+            <div id="tab-clients" class="tab-content">
+                <div class="section-header">
+                    <h2>Roadwarrior VPN Client Profiles</h2>
+                    <div class="section-actions" style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                        <select id="client-sort-select" class="form-input select-sm" onchange="changeClientSort(this.value)" style="padding: 0.35rem 0.6rem; font-size: 0.8rem; height: auto;">
+                            <option value="custom">⇅ Sequence (Drag & Drop)</option>
+                            <option value="name_asc">🔤 Name (A → Z)</option>
+                            <option value="name_desc">🔤 Name (Z → A)</option>
+                            <option value="status">⚡ Status (Active First)</option>
+                            <option value="latency">📶 Latency (Lowest First)</option>
+                            <option value="speed">🚀 Speed (Fastest First)</option>
+                        </select>
+                        <div class="view-toggle">
+                            <button type="button" id="client-view-grid-btn" class="view-toggle-btn active" onclick="setClientViewMode('grid')" title="Grid View">⊞ Cards</button>
+                            <button type="button" id="client-view-table-btn" class="view-toggle-btn" onclick="setClientViewMode('table')" title="Table View">☰ Table</button>
+                        </div>
+                        <button type="button" class="btn btn-secondary" onclick="exportAllClients()">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                            <span>Batch Client Export</span>
+                        </button>
+                        <button type="button" class="btn btn-primary" onclick="openNewClientModal()">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                            <span>Add Client Peer</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="cards-grid" id="clients-grid">
+                    <!-- Dynamic Client Cards -->
+                </div>
+                <div class="table-container" id="clients-table-container" style="display: none; margin-top: 0.5rem;">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 32px;"></th>
+                                <th>Device Name</th>
+                                <th>Assigned IP</th>
+                                <th>Handshake</th>
+                                <th>Ping Latency</th>
+                                <th>Transfer</th>
+                                <th>Live Speed</th>
+                                <th>Public Key</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="clients-table-body">
+                            <!-- Dynamic Table Rows -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- TAB 3: SITE-TO-SITE TUNNELS -->
+            <div id="tab-sites" class="tab-content">
+                <div class="section-header">
+                    <h2>Site-to-Site Gateway Meshes</h2>
+                    <div class="section-actions" style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                        <select id="site-sort-select" class="form-input select-sm" onchange="changeSiteSort(this.value)" style="padding: 0.35rem 0.6rem; font-size: 0.8rem; height: auto;">
+                            <option value="custom">⇅ Sequence (Drag & Drop)</option>
+                            <option value="name_asc">🔤 Name (A → Z)</option>
+                            <option value="name_desc">🔤 Name (Z → A)</option>
+                            <option value="status">⚡ Status (Active First)</option>
+                            <option value="latency">📶 Latency (Lowest First)</option>
+                            <option value="speed">🚀 Speed (Fastest First)</option>
+                        </select>
+                        <div class="view-toggle">
+                            <button type="button" id="site-view-grid-btn" class="view-toggle-btn active" onclick="setSiteViewMode('grid')" title="Grid View">⊞ Cards</button>
+                            <button type="button" id="site-view-table-btn" class="view-toggle-btn" onclick="setSiteViewMode('table')" title="Table View">☰ Table</button>
+                        </div>
+                        <button type="button" class="btn btn-primary" onclick="openNewSiteModal()">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                            <span>Add Site Tunnel</span>
+                        </button>
+                    </div>
+                </div>
+                <div class="cards-grid" id="sites-grid">
+                    <!-- Dynamic Site Cards -->
+                </div>
+                <div class="table-container" id="sites-table-container" style="display: none; margin-top: 0.5rem;">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 32px;"></th>
+                                <th>Branch Name</th>
+                                <th>Endpoint</th>
+                                <th>Subnet Routes</th>
+                                <th>Handshake</th>
+                                <th>Ping Latency</th>
+                                <th>Transfer</th>
+                                <th>Live Speed</th>
+                                <th>Remote Key</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sites-table-body">
+                            <!-- Dynamic Site Rows -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- TAB 4: NETWORK TOPOLOGY -->
+            <div id="tab-topology" class="tab-content">
+                <div class="section-card">
+                    <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
+                        <div>
+                            <h2>Interactive Network Topology Visualizer</h2>
+                            <span class="tag">Live Handshake Synchronized</span>
+                        </div>
+                        <div class="section-actions" style="display: flex; gap: 0.5rem; align-items: center;">
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="loadTopology()" title="Refresh Topology">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 4 23 10 17 10"></polyline><polyline points="1 20 1 14 7 14"></polyline><path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path></svg>
+                                <span>Refresh</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div id="topology-container" class="topology-wrapper" style="height: 760px; min-height: 680px; background: radial-gradient(circle at center, rgba(30, 41, 59, 0.4) 0%, rgba(11, 15, 25, 0.95) 100%); border-radius: 12px; position: relative; overflow: hidden; border: 1px solid var(--border-color); box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.5);">
+                        <svg id="topology-svg" width="100%" height="100%" preserveAspectRatio="xMidYMid meet"></svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 5: INTERFACE SETTINGS -->
+            <div id="tab-settings" class="tab-content">
+                <div class="section-card max-w-700">
+                    <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
+                        <h2>WireGuard Interface Configuration</h2>
+                        <div class="section-actions" style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                            <button type="button" class="btn btn-secondary" onclick="exportServerConfig()">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                                <span id="export-conf-btn-label">Export Config</span>
+                            </button>
+                            <button type="button" class="btn btn-primary" onclick="openNewInterfaceModal()" title="Create additional WireGuard interface">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                                <span>New Interface</span>
+                            </button>
+                        </div>
+                    </div>
+                    <form id="settings-form" onsubmit="saveInterfaceSettings(event)">
+                        <div class="form-group">
+                            <label>Interface Name</label>
+                            <input type="text" id="setting-name" class="form-input" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Listen Port (UDP)</label>
+                            <input type="number" id="setting-port" class="form-input" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Address CIDR Pool (IPv4)</label>
+                            <input type="text" id="setting-pool" class="form-input" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Address CIDR Pool (IPv6 Dual-Stack - Optional)</label>
+                            <input type="text" id="setting-pool-v6" class="form-input" placeholder="e.g. fd00:90::1/64">
+                        </div>
+                        <div class="form-group">
+                            <label>Client DNS Servers (IPv4)</label>
+                            <input type="text" id="setting-dns" class="form-input">
+                        </div>
+                        <div class="form-group">
+                            <label>Client DNS Servers (IPv6 - Optional)</label>
+                            <input type="text" id="setting-dns-v6" class="form-input" placeholder="e.g. 2606:4700:4700::1111, 2001:4860:4860::8888">
+                        </div>
+                        <div class="form-group">
+                            <label>MTU (Maximum Transmission Unit)</label>
+                            <input type="number" id="setting-mtu" class="form-input" placeholder="1420" value="1420">
+                            <div style="color: var(--text-muted); font-size: 0.8em; margin-top: 0.3rem;">Default: 1420. Set lower (e.g. 1360 or 1280) if passing over PPPoE/cellular or experiencing fragmentation.</div>
+                        </div>
+                        <div class="form-group" style="flex-direction: row; align-items: center; gap: 0.75rem; margin-top: 0.5rem; background: rgba(255, 255, 255, 0.02); padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                            <input type="checkbox" id="setting-mss-clamping" checked style="width: 18px; height: 18px; cursor: pointer;">
+                            <div>
+                                <label for="setting-mss-clamping" style="cursor: pointer; margin-bottom: 0; font-weight: 600; color: var(--text-primary);">Enable Automatic TCP MSS Clamping (--clamp-mss-to-pmtu)</label>
+                                <div style="color: var(--text-muted); font-size: 0.8em;">Automatically inserts iptables mangle rules in PostUp/PostDown to prevent packet fragmentation on high MTU streams.</div>
+                            </div>
+                        </div>
+                        <div class="form-group" style="margin-top: 1rem;">
+                            <label>PostUp Script</label>
+                            <textarea id="setting-postup" class="form-input code-input" rows="2"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>PostDown Script</label>
+                            <textarea id="setting-postdown" class="form-input code-input" rows="2"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Gateway Public Key <span style="color: var(--text-muted); font-size: 0.82em;">(Public key of the WireGuard hub — used in remote peer configs)</span></label>
+                            <input type="text" id="setting-public-key" class="form-input" placeholder="Base64 encoded public key from wg show wg0 public-key" spellcheck="false" autocomplete="off">
+                        </div>
+                        <div class="form-group">
+                            <label>Gateway Endpoint <span style="color: var(--text-muted); font-size: 0.82em;">(Public IP or hostname used in generated remote peer configs)</span></label>
+                            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                <input type="text" id="setting-gateway-endpoint" class="form-input" placeholder="e.g. 192.168.1.101 or vpn.example.com" spellcheck="false" autocomplete="off" style="flex: 1;">
+                                <button type="button" class="btn btn-secondary" onclick="detectGatewayEndpoint()" style="white-space: nowrap; padding: 0.5rem 1rem;">🔍 Auto-Detect</button>
+                            </div>
+                            <div style="color: var(--text-muted); font-size: 0.8em; margin-top: 0.3rem;">Port is appended automatically from Listen Port. Leave blank to use SSH_HOST env var.</div>
+                        </div>
+                        <div class="form-group">
+                            <label>Hub LAN / Routed Subnets <span style="color: var(--text-muted); font-size: 0.82em;">(Local subnets behind the Hub accessible by remote sites)</span></label>
+                            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                <input type="text" id="setting-hub-subnets" class="form-input" placeholder="e.g. 10.1.100.0/24, 192.168.1.0/24" spellcheck="false" autocomplete="off" style="flex: 1;">
+                                <button type="button" class="btn btn-secondary" onclick="detectHubSubnets()" style="white-space: nowrap; padding: 0.5rem 1rem;">🔍 Auto-Detect</button>
+                            </div>
+                            <div style="color: var(--text-muted); font-size: 0.8em; margin-top: 0.3rem;">These subnets are appended to <code>AllowedIPs</code> in generated remote site-to-site peer configurations.</div>
+                        </div>
+                        <button type="submit" class="btn btn-primary" style="margin-top: 1rem;">Save Interface Settings</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- TAB 6: NOTIFICATIONS & ALERTS -->
+            <div id="tab-notifications" class="tab-content">
+                <div class="section-card max-w-700">
+                    <div class="section-header">
+                        <h2>🔔 Notification & Alert Webhook Settings</h2>
+                    </div>
+                    <p style="color: var(--text-muted); margin-bottom: 1.5rem; font-size: 0.9rem;">
+                        Configure automated push notifications for tunnel Online/Offline status transitions via Ntfy, Telegram, Discord, or custom HTTP webhooks.
+                    </p>
+                    <form id="notifications-form" onsubmit="saveNotificationSettings(event)">
+                        <div class="form-group">
+                            <label>Alert Webhook URL (Ntfy / Telegram / Discord / Custom HTTP)</label>
+                            <input type="text" id="setting-webhook" class="form-input" placeholder="e.g. https://ntfy.ahmaddxb.xyz/WireguardUI">
+                        </div>
+                        <div class="form-group">
+                            <label>Alert Webhook Auth Token / Ntfy Token / Traefik Key (Optional)</label>
+                            <input type="password" id="setting-webhook-token" class="form-input" placeholder="e.g. Basic YWRtaW46... or Bearer token">
+                        </div>
+                        <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem; font-size: 0.85rem; color: var(--text-secondary);">
+                            <strong style="color: var(--text-primary);">💡 Quick Setup Guide:</strong>
+                            <ul style="margin-top: 0.5rem; padding-left: 1.2rem; line-height: 1.6;">
+                                <li><strong>Ntfy (Public/Self-hosted):</strong> Set URL to <code>https://ntfy.sh/topic</code> or <code>https://ntfy.domain.com/topic</code>.</li>
+                                <li><strong>Traefik / Authentik Bypass Token:</strong> Set token to <code>Basic &lt;base64_key&gt;</code> or <code>Bearer &lt;token&gt;</code>.</li>
+                                <li><strong>Discord / Slack:</strong> Set URL to your Discord/Slack Webhook endpoint.</li>
+                            </ul>
+                        </div>
+                        <div style="display: flex; gap: 1rem; align-items: center; margin-top: 1.5rem;">
+                            <button type="submit" class="btn btn-primary">Save Notification Settings</button>
+                            <button type="button" class="btn btn-secondary" onclick="sendTestNotification(this)">🔔 Send Test Notification</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- TAB 6: AUDIT LOGS -->
+            <div id="tab-audit" class="tab-content">
+                <div class="section-card">
+                    <div class="section-header">
+                        <h2>System Audit Logs</h2>
+                    </div>
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Timestamp</th>
+                                    <th>Action</th>
+                                    <th>Target</th>
+                                    <th>Details</th>
+                                </tr>
+                            </thead>
+                            <tbody id="audit-logs-table">
+                                <!-- Dynamic audit logs -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- MODAL: ADD CLIENT -->
+    <div id="modal-client" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>Add Client VPN Peer</h3>
+                <button class="close-btn" onclick="closeModals()">&times;</button>
+            </div>
+            <form onsubmit="submitNewClient(event)">
+                <div class="form-group">
+                    <label>Target WireGuard Interface *</label>
+                    <select id="client-interface-select" class="form-input" required></select>
+                </div>
+                <div class="form-group">
+                    <label>Device / User Name *</label>
+                    <input type="text" id="client-name-input" class="form-input" placeholder="e.g. John's Laptop" required>
+                </div>
+                <div class="form-group">
+                    <label>Client Public Key (Optional - Leave blank to auto-generate keypair)</label>
+                    <input type="text" id="client-pubkey-input" class="form-input" placeholder="Base64 WireGuard public key from client device">
+                </div>
+                <div class="form-group">
+                    <label>Pre-Shared Key (Optional)</label>
+                    <input type="text" id="client-psk-input" class="form-input" placeholder="Leave empty for standard WireGuard (No PSK)">
+                </div>
+                <div class="form-group" style="flex-direction: row; align-items: center; gap: 0.6rem; background: rgba(255, 255, 255, 0.02); padding: 0.6rem; border-radius: 6px; border: 1px solid var(--border-color);">
+                    <input type="checkbox" id="client-generate-psk" style="width: 16px; height: 16px; cursor: pointer;">
+                    <label for="client-generate-psk" style="cursor: pointer; margin-bottom: 0; font-size: 0.85rem; color: var(--text-primary);">Auto-generate a new random Pre-Shared Key (PSK)</label>
+                </div>
+                <div class="form-group" style="margin-top: 0.75rem;">
+                    <label>Custom Allowed IPv4 (Leave empty for auto-allocation)</label>
+                    <input type="text" id="client-ip-input" class="form-input" placeholder="e.g. 10.100.90.5/32">
+                </div>
+                <div class="form-group">
+                    <label>Custom Allowed IPv6 (Leave empty for auto-allocation)</label>
+                    <input type="text" id="client-ipv6-input" class="form-input" placeholder="e.g. fd00:90::5/128">
+                </div>
+                <div class="form-group">
+                    <label>Notes / Description</label>
+                    <input type="text" id="client-notes-input" class="form-input" placeholder="Optional notes">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModals()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create Client Peer</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: EDIT CLIENT -->
+    <div id="modal-edit-client" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>Edit Client VPN Peer</h3>
+                <button class="close-btn" onclick="closeModals()">&times;</button>
+            </div>
+            <form onsubmit="submitEditClient(event)">
+                <input type="hidden" id="edit-client-id">
+                <div class="form-group">
+                    <label>Device / User Name *</label>
+                    <input type="text" id="edit-client-name-input" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label>Client Public Key *</label>
+                    <input type="text" id="edit-client-pubkey-input" class="form-input" placeholder="Base64 WireGuard public key" required spellcheck="false" autocomplete="off">
+                    <div style="color: var(--text-muted); font-size: 0.8em; margin-top: 0.25rem;">Matches the client device's WireGuard public key 1:1.</div>
+                </div>
+                <div class="form-group">
+                    <label>Pre-Shared Key (Optional - Leave blank to remove PSK)</label>
+                    <input type="text" id="edit-client-psk-input" class="form-input" placeholder="Base64 PSK or leave blank for none" spellcheck="false" autocomplete="off">
+                </div>
+                <div class="form-group">
+                    <label>Assigned IP / Allowed IPs *</label>
+                    <input type="text" id="edit-client-ip-input" class="form-input" placeholder="e.g. 10.100.90.6/32" required>
+                </div>
+                <div class="form-group">
+                    <label>Notes / Description</label>
+                    <input type="text" id="edit-client-notes-input" class="form-input" placeholder="Optional notes">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModals()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes & Sync Proxmox</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: ADD SITE-TO-SITE -->
+    <div id="modal-site" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>Add Site-to-Site Tunnel</h3>
+                <button class="close-btn" onclick="closeModals()">&times;</button>
+            </div>
+            <form onsubmit="submitNewSite(event)">
+                <div style="background: rgba(99, 102, 241, 0.08); border: 1px solid rgba(99, 102, 241, 0.25); border-radius: 8px; padding: 0.9rem; margin-bottom: 1.2rem; font-size: 0.82rem; color: var(--text-secondary);">
+                    <strong style="color: var(--accent-blue); display: flex; align-items: center; justify-content: space-between;">
+                        <span>⚡ Step 1: Remote Host Probe Helper</span>
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="copyRemoteProbeCmd()">📋 Copy Probe Command</button>
+                    </strong>
+                    <p style="margin-top: 0.4rem; line-height: 1.4;">Paste this 1-line command in SSH terminal on the remote host to auto-generate keys & print its Public Key, Public Endpoint, and Subnets:</p>
+                    <textarea id="probe-cmd-text" class="form-input code-input" rows="4" readonly onclick="this.select()" style="font-size: 0.81rem; background: #090d16; color: #38bdf8; cursor: pointer; margin-top: 0.5rem; width: 100%; min-height: 100px; border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 8px; padding: 0.75rem; line-height: 1.45; font-family: var(--font-mono, monospace); white-space: pre-wrap; word-break: break-all; resize: vertical;" title="Click to select all text">(umask 077 && mkdir -p /etc/wireguard && chmod 700 /etc/wireguard && ([ -f /etc/wireguard/private.key ] || wg genkey > /etc/wireguard/private.key); wg pubkey < /etc/wireguard/private.key > /etc/wireguard/public.key && chmod 600 /etc/wireguard/*.key); echo -e "\n=== REMOTE HOST INFO ===" && echo "PUBLIC_KEY:  $(cat /etc/wireguard/public.key)" && echo "ENDPOINT:    $(curl -s --connect-timeout 3 https://api.ipify.org || curl -s --connect-timeout 3 ifconfig.me || echo 'YOUR_PUBLIC_IP'):51820" && echo "SUBNETS:     $( (ip -o route | awk '$1 ~ /\// && $1 !~ /^default|^169\.254|^127\./ {print $1}'; ip -o addr show | awk '$3 ~ /^inet/ && $4 !~ /^127\.|^169\.254/ {split($4, a, "/"); print a[1] "/32"}') | sort -u | head -n 5 | tr '\n' ',' | sed 's/,$//' )"</textarea>
+                </div>
+                <div class="form-group">
+                    <label>Target WireGuard Interface *</label>
+                    <select id="site-interface-select" class="form-input" required></select>
+                </div>
+                <div class="form-group">
+                    <label>Remote Branch Name *</label>
+                    <input type="text" id="site-name-input" class="form-input" placeholder="e.g. London Office Gateway" required>
+                </div>
+                <div class="form-group">
+                    <label>Remote Public Key *</label>
+                    <input type="text" id="site-pubkey-input" class="form-input" placeholder="Base64 WireGuard Public Key" required>
+                </div>
+                <div class="form-group">
+                    <label>Preshared Key (Optional)</label>
+                    <input type="text" id="site-psk-input" class="form-input" placeholder="Optional WireGuard Preshared Key">
+                </div>
+                <div class="form-group">
+                    <label>Remote Allowed IPs / Subnets *</label>
+                    <input type="text" id="site-subnets-input" class="form-input" placeholder="e.g. 192.168.10.0/24, 10.100.90.50/32" required>
+                </div>
+                <div class="form-group">
+                    <label>Remote Endpoint Host:Port</label>
+                    <input type="text" id="site-endpoint-input" class="form-input" placeholder="e.g. london-vpn.company.com:51820">
+                </div>
+                <div class="form-group">
+                    <label>Persistent Keepalive (Seconds)</label>
+                    <input type="number" id="site-keepalive-input" class="form-input" value="25">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModals()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Establish Site Route</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: EDIT SITE-TO-SITE -->
+    <div id="modal-edit-site" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>Edit Site-to-Site Tunnel</h3>
+                <button class="close-btn" onclick="closeModals()">&times;</button>
+            </div>
+            <form onsubmit="submitEditSite(event)">
+                <input type="hidden" id="edit-site-id">
+                <div class="form-group">
+                    <label>Remote Branch / Tunnel Name *</label>
+                    <input type="text" id="edit-site-name-input" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label>Remote Public Key *</label>
+                    <input type="text" id="edit-site-pubkey-input" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label>Preshared Key (Optional)</label>
+                    <input type="text" id="edit-site-psk-input" class="form-input" placeholder="Optional WireGuard Preshared Key">
+                </div>
+                <div class="form-group">
+                    <label>Remote Allowed IPs / Subnet Routes *</label>
+                    <input type="text" id="edit-site-subnets-input" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label>Remote Endpoint Host:Port</label>
+                    <input type="text" id="edit-site-endpoint-input" class="form-input" placeholder="e.g. branch.company.com:51820">
+                </div>
+                <div class="form-group">
+                    <label>Persistent Keepalive (Seconds)</label>
+                    <input type="number" id="edit-site-keepalive-input" class="form-input" value="25">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModals()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes & Sync Proxmox</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: SITE SETUP ASSISTANT -->
+    <div id="modal-site-setup" class="modal-overlay">
+        <div class="modal-card max-w-700" style="max-width: 720px;">
+            <div class="modal-header">
+                <h3 id="site-setup-title">🚀 Remote Gateway Setup Assistant</h3>
+                <button class="close-btn" onclick="closeModals()">&times;</button>
+            </div>
+            <div style="padding: 1rem 0;">
+                <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1.2rem;">
+                    Deploying a branch router / remote server site-to-site gateway? Choose either option below to establish the remote end in 5 seconds!
+                </p>
+
+                <!-- OPTION 1: 1-LINE SSH BOOTSTRAP -->
+                <div style="background: rgba(99, 102, 241, 0.08); border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 8px; padding: 1rem; margin-bottom: 1.2rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                        <strong style="color: var(--accent-blue); font-size: 0.9rem;">⚡ Option A: 1-Line Remote Auto-Install Script (Recommended)</strong>
+                        <button type="button" class="btn btn-primary btn-sm" onclick="copySiteBootstrapCmd()">📋 Copy 1-Line Command</button>
+                    </div>
+                    <p style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.5rem;">
+                        Paste this command into your SSH terminal on the remote router. It automatically generates keypairs, writes <code>/etc/wireguard/wg0.conf</code>, and starts the tunnel live!
+                    </p>
+                    <textarea id="site-bootstrap-text" class="form-input code-input" rows="4" readonly onclick="this.select()" style="font-size: 0.81rem; background: #090d16; color: #38bdf8; cursor: pointer; margin-top: 0.5rem; width: 100%; min-height: 110px; border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 8px; padding: 0.75rem; line-height: 1.45; font-family: var(--font-mono, monospace); white-space: pre-wrap; word-break: break-all; resize: vertical;" title="Click to select all text"></textarea>
+                </div>
+
+                <!-- OPTION 2: RAW /etc/wireguard/wg0.conf FILE -->
+                <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                        <strong style="color: var(--text-primary); font-size: 0.9rem;">📄 Option B: Pre-filled Remote <code>/etc/wireguard/wg0.conf</code> Config</strong>
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="copySiteConfigText()">📋 Copy Raw Config</button>
+                    </div>
+                    <textarea id="site-config-text" class="form-input code-input" rows="10" readonly onclick="this.select()" style="font-size: 0.82rem; background: #090d16; color: #e2e8f0; cursor: pointer; margin-top: 0.5rem; width: 100%; min-height: 220px; height: 240px; border: 1px solid var(--border-color); border-radius: 8px; padding: 0.75rem; line-height: 1.45; font-family: var(--font-mono, monospace); white-space: pre; overflow-x: auto; resize: vertical;" title="Click to select all text"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" onclick="closeModals()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: EDIT CLIENT -->
+    <div id="modal-edit-client" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>Edit Client VPN Device</h3>
+                <button class="close-btn" onclick="closeModals()">&times;</button>
+            </div>
+            <form onsubmit="submitEditClient(event)">
+                <input type="hidden" id="edit-client-id">
+                <input type="hidden" id="edit-client-pubkey">
+                <div class="form-group">
+                    <label>Device / User Name *</label>
+                    <input type="text" id="edit-client-name-input" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label>Assigned Tunnel IP Address *</label>
+                    <input type="text" id="edit-client-ip-input" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label>Notes / Description</label>
+                    <input type="text" id="edit-client-notes-input" class="form-input" placeholder="Optional notes">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModals()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes & Sync</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL: QR CODE & CONFIG -->
+    <div id="modal-qr" class="modal-overlay">
+        <div class="modal-card modal-lg">
+            <div class="modal-header">
+                <h3 id="qr-modal-title">Client VPN Configuration</h3>
+                <button class="close-btn" onclick="closeModals()">&times;</button>
+            </div>
+            <div class="qr-content-grid">
+                <div class="qr-box">
+                    <img id="qr-image" src="" alt="WireGuard QR Code">
+                    <p class="subtext">Scan with WireGuard iOS / Android App</p>
+                </div>
+                <div class="config-box">
+                    <label>Raw Configuration (.conf)</label>
+                    <textarea id="config-text" class="form-input code-input" rows="10" readonly></textarea>
+                    <div class="btn-row">
+                        <button class="btn btn-secondary" onclick="copyConfigText()">Copy Config</button>
+                        <button class="btn btn-primary" onclick="downloadCurrentClientConfig()">Download .conf</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: IPERF3 SPEEDTEST -->
+    <div id="modal-iperf3" class="modal-overlay">
+        <div class="modal-card max-w-700" style="max-width: 680px;">
+            <div class="modal-header">
+                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                    <span style="font-size: 1.3rem;">⚡</span>
+                    <div>
+                        <h3 id="iperf-modal-title" style="margin: 0;">WireGuard Throughput Speedtest</h3>
+                        <div id="iperf-modal-subtitle" style="font-size: 0.8rem; color: var(--text-muted); font-family: var(--font-mono); margin-top: 2px;">iperf3 Active Bandwidth Benchmark</div>
+                    </div>
+                </div>
+                <button class="close-btn" onclick="closeModals()">&times;</button>
+            </div>
+            
+            <div style="padding: 1rem 0;">
+                <!-- Test Target Card -->
+                <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 8px; padding: 0.85rem 1rem; margin-bottom: 1.25rem;">
+                    <div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Target Peer / Subnet</div>
+                        <div id="iperf-target-display" style="font-weight: 600; font-size: 1rem; color: var(--accent-cyan); font-family: var(--font-mono); margin-top: 2px;">10.100.90.5</div>
+                    </div>
+                    <input type="hidden" id="iperf-peer-id">
+                    <input type="hidden" id="iperf-target-ip">
+                    <div style="text-align: right;">
+                        <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Port</div>
+                        <input type="number" id="iperf-port-input" class="form-input" value="5201" style="width: 90px; padding: 0.25rem 0.5rem; font-size: 0.85rem; text-align: center;">
+                    </div>
+                </div>
+
+                <!-- Test Controls -->
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.25rem;">
+                    <div>
+                        <label style="display: block; font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 0.4rem;">Test Direction</label>
+                        <div class="view-toggle" style="width: 100%; display: flex;">
+                            <button type="button" id="iperf-dir-upload" class="view-toggle-btn active" style="flex: 1; justify-content: center;" onclick="setIperfDirection(false)">⬆️ Upload (Hub → Peer)</button>
+                            <button type="button" id="iperf-dir-download" class="view-toggle-btn" style="flex: 1; justify-content: center;" onclick="setIperfDirection(true)">⬇️ Download (Peer → Hub)</button>
+                        </div>
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 0.4rem;">Duration & Streams</label>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <select id="iperf-duration-select" class="form-input" style="flex: 1; padding: 0.45rem 0.6rem; font-size: 0.85rem;">
+                                <option value="5" selected>⏱️ 5 Seconds</option>
+                                <option value="10">⏱️ 10 Seconds</option>
+                                <option value="15">⏱️ 15 Seconds</option>
+                                <option value="30">⏱️ 30 Seconds</option>
+                            </select>
+                            <select id="iperf-parallel-select" class="form-input" style="width: 110px; padding: 0.45rem 0.6rem; font-size: 0.85rem;">
+                                <option value="1" selected>1 Stream</option>
+                                <option value="2">2 Streams</option>
+                                <option value="4">4 Streams</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Speedometer / Results Showcase -->
+                <div id="iperf-results-panel" style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.9), rgba(30, 41, 59, 0.8)); border: 1px solid var(--border-glow); border-radius: 12px; padding: 1.5rem; text-align: center; margin-bottom: 1.25rem; position: relative; overflow: hidden;">
+                    <div id="iperf-status-badge" style="display: inline-block; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; padding: 0.2rem 0.75rem; border-radius: 20px; background: rgba(99, 102, 241, 0.2); color: var(--accent-blue); font-weight: 600; margin-bottom: 0.75rem;">Ready to Benchmark</div>
+                    
+                    <div style="display: flex; justify-content: center; align-items: baseline; gap: 0.35rem; margin: 0.5rem 0;">
+                        <span id="iperf-speed-val" style="font-size: 3.2rem; font-weight: 800; font-family: var(--font-mono); background: linear-gradient(135deg, #38bdf8, #818cf8, #c084fc); -webkit-background-clip: text; -webkit-text-fill-color: transparent; line-height: 1;">---</span>
+                    </div>
+
+                    <div id="iperf-progress-container" style="display: none; width: 100%; background: rgba(255,255,255,0.06); height: 6px; border-radius: 3px; margin: 1rem 0; overflow: hidden;">
+                        <div id="iperf-progress-bar" style="height: 100%; width: 0%; background: linear-gradient(90deg, #38bdf8, #818cf8); transition: width 0.3s ease;"></div>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; margin-top: 1.25rem; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 1rem;">
+                        <div style="background: rgba(255,255,255,0.02); padding: 0.5rem; border-radius: 6px;">
+                            <div style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase;">Transferred</div>
+                            <div id="iperf-transferred-val" style="font-weight: 600; font-size: 0.95rem; font-family: var(--font-mono); margin-top: 2px;">--</div>
+                        </div>
+                        <div style="background: rgba(255,255,255,0.02); padding: 0.5rem; border-radius: 6px;">
+                            <div style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase;">Retransmits</div>
+                            <div id="iperf-retrans-val" style="font-weight: 600; font-size: 0.95rem; font-family: var(--font-mono); margin-top: 2px;">--</div>
+                        </div>
+                        <div style="background: rgba(255,255,255,0.02); padding: 0.5rem; border-radius: 6px;">
+                            <div style="font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase;">Duration</div>
+                            <div id="iperf-duration-val" style="font-weight: 600; font-size: 0.95rem; font-family: var(--font-mono); margin-top: 2px;">--</div>
+                        </div>
+                    </div>
+
+                    <div id="iperf-error-box" style="display: none; margin-top: 1rem; padding: 0.75rem; background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 6px; font-size: 0.8rem; color: #fca5a5; text-align: left;"></div>
+                </div>
+
+                <!-- Diagnostics & Troubleshooting Section -->
+                <div id="iperf-diag-container" style="display: none; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-color); border-radius: 10px; padding: 1rem; margin-bottom: 1.25rem;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                        <strong style="color: var(--text-primary); font-size: 0.88rem; display: flex; align-items: center; gap: 0.4rem;">
+                            <span>🔍</span> Diagnostic Breakdown & Root Cause
+                        </strong>
+                        <span id="iperf-diag-badge" style="font-size: 0.7rem; padding: 0.15rem 0.5rem; border-radius: 10px; font-weight: 600; background: rgba(239, 68, 68, 0.2); color: var(--accent-red);">Connection Refused</span>
+                    </div>
+
+                    <!-- 3 Diagnostic Metric Pills -->
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; margin-bottom: 0.85rem;">
+                        <div id="iperf-diag-route-pill" style="background: rgba(15, 23, 42, 0.6); padding: 0.45rem 0.6rem; border-radius: 6px; font-size: 0.75rem; border: 1px solid var(--border-color);">
+                            <div style="color: var(--text-muted); font-size: 0.68rem; text-transform: uppercase;">Kernel Route</div>
+                            <div id="iperf-diag-route-val" style="font-weight: 600; margin-top: 2px;">--</div>
+                        </div>
+                        <div id="iperf-diag-ping-pill" style="background: rgba(15, 23, 42, 0.6); padding: 0.45rem 0.6rem; border-radius: 6px; font-size: 0.75rem; border: 1px solid var(--border-color);">
+                            <div style="color: var(--text-muted); font-size: 0.68rem; text-transform: uppercase;">ICMP Ping</div>
+                            <div id="iperf-diag-ping-val" style="font-weight: 600; margin-top: 2px;">--</div>
+                        </div>
+                        <div id="iperf-diag-port-pill" style="background: rgba(15, 23, 42, 0.6); padding: 0.45rem 0.6rem; border-radius: 6px; font-size: 0.75rem; border: 1px solid var(--border-color);">
+                            <div style="color: var(--text-muted); font-size: 0.68rem; text-transform: uppercase;">TCP Port 5201</div>
+                            <div id="iperf-diag-port-val" style="font-weight: 600; margin-top: 2px;">--</div>
+                        </div>
+                    </div>
+
+                    <!-- Root Cause & Recommendation -->
+                    <div id="iperf-diag-recom" style="font-size: 0.82rem; color: #fde047; background: rgba(234, 179, 8, 0.1); border: 1px solid rgba(234, 179, 8, 0.25); border-radius: 6px; padding: 0.6rem 0.75rem; margin-bottom: 0.75rem; line-height: 1.45;"></div>
+
+                    <!-- 1-Click Fix Command for Remote Peer -->
+                    <div id="iperf-diag-fix-box" style="display: none; background: rgba(99, 102, 241, 0.08); border: 1px solid rgba(99, 102, 241, 0.3); border-radius: 8px; padding: 0.75rem; margin-bottom: 0.75rem;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+                            <strong style="color: var(--accent-blue); font-size: 0.8rem;">⚡ 1-Line Remote Fix Command:</strong>
+                            <button type="button" class="btn btn-primary btn-sm" onclick="copyIperfFixCommand()" style="font-size: 0.75rem; padding: 0.2rem 0.6rem;">📋 Copy Fix</button>
+                        </div>
+                        <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.35rem;">Run this inside SSH on the remote machine to install & launch iperf3 in the background:</div>
+                        <textarea id="iperf-diag-fix-text" class="form-input code-input" rows="2" readonly onclick="this.select()" style="font-size: 0.78rem; background: #090d16; color: #38bdf8; cursor: pointer; width: 100%; border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 6px; padding: 0.4rem; font-family: var(--font-mono); resize: none;"></textarea>
+                    </div>
+
+                    <!-- Alternate Peer -> Hub Command -->
+                    <div id="iperf-diag-peer-cmd-box" style="background: rgba(16, 185, 129, 0.06); border: 1px solid rgba(16, 185, 129, 0.25); border-radius: 8px; padding: 0.6rem 0.75rem; display: flex; justify-content: space-between; align-items: center; gap: 0.75rem;">
+                        <div style="font-size: 0.78rem;">
+                            <strong style="color: var(--accent-green);">🔄 Or Benchmark from Remote Peer to Hub:</strong>
+                            <code id="iperf-diag-peer-cmd-text" style="display: block; margin-top: 0.2rem; color: #34d399; font-family: var(--font-mono);">iperf3 -c 10.100.90.2 -p 5201 -t 5</code>
+                        </div>
+                        <button type="button" class="btn btn-secondary btn-sm" onclick="copyIperfPeerTestCommand()" style="font-size: 0.75rem; padding: 0.2rem 0.6rem; white-space: nowrap;">📋 Copy</button>
+                    </div>
+                </div>
+
+                <!-- Remote Host Helper -->
+                <div style="background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border-color); border-radius: 8px; padding: 0.85rem 1rem; font-size: 0.8rem; color: var(--text-secondary); display: flex; justify-content: space-between; align-items: center; gap: 1rem;">
+                    <div>
+                        <strong style="color: var(--text-primary);">💡 Remote Router Tip:</strong> If connection fails, ensure iperf3 is running on the remote peer:
+                        <code style="display: block; margin-top: 0.25rem; color: #38bdf8; background: #090d16; padding: 0.2rem 0.5rem; border-radius: 4px; font-family: var(--font-mono);">iperf3 -s -D</code>
+                    </div>
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="copyToClipboard('iperf3 -s -D').then(() => showToast('Command copied!', 'success'))" style="white-space: nowrap;">📋 Copy</button>
+                </div>
+            </div>
+
+            <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center;">
+                <button type="button" class="btn btn-secondary" onclick="closeModals()">Close</button>
+                <button type="button" id="iperf-start-btn" class="btn btn-primary" onclick="startIperfTest()" style="padding: 0.6rem 1.5rem; font-weight: 600;">⚡ Run Speedtest</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: CREATE NEW INTERFACE -->
+    <div id="modal-new-interface" class="modal-overlay">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>🌐 Create WireGuard Interface</h3>
+                <button class="close-btn" onclick="closeModals()">&times;</button>
+            </div>
+            <form onsubmit="submitNewInterface(event)">
+                <div class="form-group">
+                    <label>Interface Identifier * (e.g. wg1, wg2)</label>
+                    <input type="text" id="new-iface-id" class="form-input" placeholder="wg1" required pattern="[a-zA-Z0-9_-]+" title="Alphanumeric identifier">
+                </div>
+                <div class="form-group">
+                    <label>Friendly Name *</label>
+                    <input type="text" id="new-iface-name" class="form-input" placeholder="e.g. Site Mesh Network" required>
+                </div>
+                <div class="form-group">
+                    <label>Listen Port (UDP) *</label>
+                    <input type="number" id="new-iface-port" class="form-input" value="51822" required>
+                </div>
+                <div class="form-group">
+                    <label>IPv4 CIDR Pool *</label>
+                    <input type="text" id="new-iface-pool" class="form-input" value="10.101.90.1/24" required>
+                </div>
+                <div class="form-group">
+                    <label>IPv6 CIDR Pool (Optional Dual-Stack)</label>
+                    <input type="text" id="new-iface-pool-v6" class="form-input" placeholder="e.g. fd00:91::1/64">
+                </div>
+                <div class="form-group">
+                    <label>MTU</label>
+                    <input type="number" id="new-iface-mtu" class="form-input" value="1420">
+                </div>
+                <div class="form-group" style="flex-direction: row; align-items: center; gap: 0.75rem; background: rgba(255, 255, 255, 0.02); padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                    <input type="checkbox" id="new-iface-mss-clamping" checked style="width: 18px; height: 18px; cursor: pointer;">
+                    <div>
+                        <label for="new-iface-mss-clamping" style="cursor: pointer; margin-bottom: 0; font-weight: 600; color: var(--text-primary);">Enable TCP MSS Clamping</label>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" onclick="closeModals()">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create Interface</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast Notifications Container -->
+    <div id="toast-container" style="position: fixed; bottom: 2rem; right: 2rem; z-index: 9999; display: flex; flex-direction: column; gap: 0.5rem;"></div>
+
+    <script src="app.js?v=1.0.3"></script>
+</body>
+</html>

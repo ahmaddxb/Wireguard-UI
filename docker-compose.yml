@@ -1,0 +1,36 @@
+services:
+  wireguard-ui:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: wireguard-ui
+    restart: unless-stopped
+    network_mode: host # Allows container to bind to host interface ports
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    volumes:
+      # SQLite database persistence
+      - ./wireguard_ui.db:/app/wireguard_ui.db
+      # Server WireGuard configuration directory
+      - /etc/wireguard:/etc/wireguard
+      # Kernel modules directory
+      - /lib/modules:/lib/modules
+      # Passwordless SSH keys for remote Proxmox Host orchestration (Read-Only)
+      - /root/.ssh:/root/.ssh:ro
+    environment:
+      # Web portal port
+      - PORT=8085
+      # Logging level
+      - RUST_LOG=wireguard_ui=info
+      # Remote SSH Synchronization:
+      # Set ENABLE_SSH_SYNC=true to control a remote Proxmox Host over SSH.
+      # Set ENABLE_SSH_SYNC=false when running natively on Proxmox VE or local Linux host.
+      - ENABLE_SSH_SYNC=true
+      # Target Proxmox VE Hypervisor IP address
+      - SSH_HOST=192.168.1.101
+      # Remote SSH user
+      - SSH_USER=root
+      # Optional Alert Webhook URL & Authentication Token (Ntfy / Telegram / Discord):
+      # - WEBHOOK_URL=https://ntfy.sh/my_wireguard_alerts
+      # - WEBHOOK_TOKEN=tk_1a2b3c4d5e...

@@ -1,0 +1,32 @@
+# Rust build artifacts
+/target
+/build
+
+# Compiled binaries and archives
+*.tar.gz
+*.zip
+*.bin
+*.exe
+
+# SQLite databases & runtime storage
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Environment & local credentials
+.env
+.env.*
+*.key
+*.pem
+*.pub
+
+# Local developer & agent infrastructure configs
+.agents/
+
+# System and editor files
+.DS_Store
+Thumbs.db
+*.log
+.vscode/
+.idea/
