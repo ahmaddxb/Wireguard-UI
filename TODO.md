@@ -161,9 +161,10 @@ This document tracks upcoming features, architectural improvements, and planned 
 
 ## 🛠️ 8. DevOps, CI/CD & Cross-Platform
 
-- [ ] **GitHub Actions CI/CD Pipeline**:
-  - Automated `cargo test`, `cargo clippy`, and `cargo check`.
-  - Multi-architecture Docker builds (`linux/amd64`, `linux/arm64` for Raspberry Pi).
+- [x] **GitHub Actions CI/CD Pipeline**:
+  - [x] Automated `cargo test` and `cargo check` validation workflow.
+  - [x] Multi-architecture Docker builds (`linux/amd64`, `linux/arm64` for Raspberry Pi) published automatically to GHCR (`ghcr.io/ahmaddxb/wireguard-ui`).
+  - [x] Automated Musl static binary compilation (`x86_64` & `aarch64`) with automated GitHub Releases publishing on tag.
 - [ ] **Unit & Integration Tests**:
   - IP allocation collision tests.
   - Zero-downtime `wg syncconf` configuration parser tests.

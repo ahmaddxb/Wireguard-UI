@@ -1,5 +1,10 @@
 # ⚡ WireGuard WebUI (Rust + Single Binary + Docker)
 
+[![CI & Build Release](https://github.com/ahmaddxb/Wireguard-UI/actions/workflows/ci-release.yml/badge.svg)](https://github.com/ahmaddxb/Wireguard-UI/actions/workflows/ci-release.yml)
+[![Docker Image](https://img.shields.io/badge/docker-ghcr.io%2Fahmaddxb%2Fwireguard--ui-blue?logo=docker)](https://github.com/ahmaddxb/Wireguard-UI/pkgs/container/wireguard-ui)
+[![Release](https://img.shields.io/github/v/release/ahmaddxb/Wireguard-UI?include_prereleases&color=emerald)](https://github.com/ahmaddxb/Wireguard-UI/releases)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 A high-performance, ultra-low footprint WireGuard management portal built with **Rust (Axum + Tokio + SQLite)** and an embedded **Single-Page Application (SPA)** dashboard.
 
 Designed for modern home labs, Proxmox VE hypervisors, cloud VPS instances, and enterprise site-to-site VPN networks.
@@ -30,10 +35,8 @@ Designed for modern home labs, Proxmox VE hypervisors, cloud VPS instances, and 
 
 ```text
 Wireguard-UI/
-├── .agents/
-│   └── AGENTS.md               # Architecture manual & AI agent guidelines
-├── build/
-│   └── wireguard-ui            # Compiled standalone Linux x86_64 binary (~6.1 MB)
+├── .github/
+│   └── workflows/ci-release.yml # Multi-arch binary build & GHCR container publisher
 ├── src/                        # Rust backend source code
 │   ├── main.rs                 # Axum REST API routes & startup engine
 │   ├── models.rs               # Interface, Peer, Overview, Bandwidth & Topology structs
@@ -51,16 +54,16 @@ Wireguard-UI/
 
 ---
 
-## 🚀 Deployment Option 1: Docker Compose (Recommended)
+## 🚀 Quick Start: Docker (Recommended)
 
-### 1. `docker-compose.yml` Configuration
+Pre-built multi-architecture container images (`linux/amd64` and `linux/arm64`) are automatically published to the **GitHub Container Registry (GHCR)**.
+
+### 1. `docker-compose.yml`
 
 ```yaml
 services:
   wireguard-ui:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: ghcr.io/ahmaddxb/wireguard-ui:latest
     container_name: wireguard-ui
     restart: unless-stopped
     network_mode: host # Allows container to bind to host interface ports
@@ -94,28 +97,54 @@ services:
       - WEBHOOK_TOKEN=tk_1a2b3c4d5e...
 ```
 
-### 2. Launch the Container
+### 2. Launch Container
 
 ```bash
-docker compose up -d --build
+docker compose up -d
 ```
 
 Access the dashboard at: **`http://<YOUR_SERVER_IP>:8085`**
 
 ---
 
-## 📦 Deployment Option 2: Single Standalone Binary
-
-The standalone compiled binary is saved directly at [`build/wireguard-ui`](file:///z:/Github/Wireguard-UI/build/wireguard-ui).
-
-### 1. Run Directly from Terminal
+### ⚡ 1-Line Docker Run Command
 
 ```bash
-# Make executable
-chmod +x build/wireguard-ui
+docker run -d \
+  --name wireguard-ui \
+  --restart unless-stopped \
+  --network host \
+  --cap-add NET_ADMIN \
+  --cap-add SYS_MODULE \
+  -v ./wireguard_ui.db:/app/wireguard_ui.db \
+  -v /etc/wireguard:/etc/wireguard \
+  -v /lib/modules:/lib/modules \
+  -v /root/.ssh:/root/.ssh:ro \
+  -e PORT=8085 \
+  -e ENABLE_SSH_SYNC=true \
+  -e SSH_HOST=192.168.1.101 \
+  -e SSH_USER=root \
+  ghcr.io/ahmaddxb/wireguard-ui:latest
+```
 
-# Launch binary
-PORT=8085 WEBHOOK_URL=https://ntfy.sh/my_alerts ./build/wireguard-ui
+---
+
+## 📦 Deployment Option 2: Pre-Built Standalone Binary
+
+Statically linked Musl binaries with zero external dependencies are published on [GitHub Releases](https://github.com/ahmaddxb/Wireguard-UI/releases) for every release and tag.
+
+### 1. Download & Run
+
+```bash
+# Download latest x86_64 binary
+curl -sL https://github.com/ahmaddxb/Wireguard-UI/releases/latest/download/wireguard-ui-linux-amd64.tar.gz | tar -xz
+
+# Or ARM64 (Raspberry Pi / AWS Graviton)
+# curl -sL https://github.com/ahmaddxb/Wireguard-UI/releases/latest/download/wireguard-ui-linux-arm64.tar.gz | tar -xz
+
+# Make executable & launch
+chmod +x wireguard-ui
+PORT=8085 ./wireguard-ui
 ```
 
 ---
@@ -126,7 +155,7 @@ To run `wireguard-ui` automatically on system boot:
 
 1. **Install Binary**:
    ```bash
-   cp build/wireguard-ui /usr/local/bin/wireguard-ui
+   cp wireguard-ui /usr/local/bin/wireguard-ui
    chmod +x /usr/local/bin/wireguard-ui
    ```
 
