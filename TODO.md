@@ -107,7 +107,7 @@ This document tracks upcoming features, architectural improvements, and planned 
   - [x] Edge-aware pixel bounding calculation preventing tooltip clipping across all viewport boundaries.
   - [x] Distinct visual styling: Emerald Green (`#10b981`) Inbound (Rx) and Vibrant Purple (`#a855f7`) Outbound (Tx).
 - [ ] **Ergonomics & Modal Upgrades**:
-  - [ ] Auto-suggest and pre-fill next available IP address in Add Client Peer modal.
+  - [x] Auto-suggest and pre-fill next available IP address in Add Client Peer modal.
   - [ ] Custom glassmorphic confirmation modal with destructive warning prompts (replacing browser `confirm()`).
   - [ ] Click-to-copy micro-tooltips on IP badges throughout tables and cards.
 - [ ] **Responsive & Mobile Layout**:
@@ -124,38 +124,38 @@ This document tracks upcoming features, architectural improvements, and planned 
 
 ## ⚙️ 7. Comprehensive Settings Hub & App Management
 
-- [ ] **Unified Settings Architecture**:
-  - [ ] Reorganize sidebar "Interface Settings" and "Notifications & Alerts" into a multi-section **Settings Hub** with sub-tabs / pills:
+- [x] **Unified Settings Architecture**:
+  - [x] Reorganize sidebar "Interface Settings" and "Notifications & Alerts" into a multi-section **Settings Hub** with sub-tabs / pills:
     - `[ 🛡️ WireGuard Interfaces ]` `[ ⚙️ App Preferences ]` `[ 🖥️ Engine & Diagnostics ]` `[ 🔔 Notifications ]` `[ 💾 Backup & Restore ]`
-- [ ] **Interface Settings & Firewall Snippets Upgrade**:
-  - [ ] **1-Click Firewall Snippet Buttons** for `PostUp` and `PostDown`:
+- [x] **Interface Settings & Firewall Snippets Upgrade**:
+  - [x] **1-Click Firewall Snippet Buttons** for `PostUp` and `PostDown`:
     - `[ + NAT Masquerade ]` (auto-injects paired `iptables -t nat -A/-D POSTROUTING -o <iface> -j MASQUERADE`).
     - `[ + LAN Bidirectional Forwarding ]` (`iptables -A/-D FORWARD -i %i -j ACCEPT; iptables -A/-D FORWARD -o %i -j ACCEPT`).
     - `[ + Client Isolation ]` (Zero-trust peer separation: `iptables -I/-D FORWARD -i %i -o %i -j DROP`).
     - `[ + TCP MSS Clamping ]` (`iptables -t mangle -A/-D POSTROUTING -p tcp --tcp-flags SYN,RST SYN -o %i -j TCPMSS --clamp-mss-to-pmtu`).
     - Synchronized dual-box injection (appending rule in `PostUp` while automatically generating paired teardown `-D` rule in `PostDown`).
     - Safe "Clear Scripts" reset helper.
-  - [ ] **Live IP Pool & CIDR Inspector**:
+  - [x] **Live IP Pool & CIDR Inspector**:
     - Real-time address pool stats badge (usable IP range, total assignable slots, active peer allocation percentage).
     - Inline input validation for CIDRs, port bounds (1–65535), and Curve25519 44-character Base64 public keys.
-  - [ ] **Server Keypair Helper**:
+  - [x] **Server Keypair Helper**:
     - "Auto-Derive Public Key" trigger querying interface private key / host kernel.
-  - [ ] **Live Server Configuration Preview**:
+  - [x] **Live Server Configuration Preview**:
     - Embedded syntax-highlighted modal/drawer previewing assembled `<iface>.conf` with all associated peers before export.
-  - [ ] **Kernel Lifecycle Actions**:
+  - [x] **Kernel Lifecycle Actions**:
     - "⚡ Force Kernel Sync (`wg syncconf`)" action trigger directly from the interface settings card.
-- [ ] **Global App & Client Presets**:
-  - [ ] Default Tunnel Mode preset for new clients (**Full Tunnel** `0.0.0.0/0, ::/0` vs **Split Tunnel**).
-  - [ ] Default Client MTU (`1420` default, or `1280` for mobile cellular).
-  - [ ] Default Client DNS servers (e.g. Pi-hole, AdGuard Home, Cloudflare).
-  - [ ] Configurable telemetry polling interval (`1s`, `2s`, `5s`, `10s`).
-- [ ] **Hypervisor & Engine Diagnostics**:
-  - [ ] Live OpenSSH connection status & multiplexing socket check (`/tmp/ssh_mux_...`).
-  - [ ] "Test Remote SSH Connection" diagnostic trigger directly from UI.
-  - [ ] Kernel wireguard and iptables module version detection.
-- [ ] **Database & Telemetry Maintenance**:
-  - [ ] 1-click manual download of SQLite database snapshot (`wireguard_ui.db`).
-  - [ ] Telemetry history pruning (clean up bandwidth samples older than *X* days).
+- [x] **Global App & Client Presets**:
+  - [x] Default Tunnel Mode preset for new clients (**Full Tunnel** `0.0.0.0/0, ::/0` vs **Split Tunnel**).
+  - [x] Default Client MTU (`1420` default, or `1280` for mobile cellular).
+  - [x] Default Client DNS servers (e.g. Pi-hole, AdGuard Home, Cloudflare).
+  - [x] Configurable telemetry polling interval (`1s`, `2s`, `5s`, `10s`).
+- [x] **Hypervisor & Engine Diagnostics**:
+  - [x] Live OpenSSH connection status & multiplexing socket check (`/tmp/ssh_mux_...`).
+  - [x] "Test Remote SSH Connection" diagnostic trigger directly from UI.
+  - [x] Kernel wireguard and iptables module version detection.
+- [x] **Database & Telemetry Maintenance**:
+  - [x] 1-click manual download of SQLite database snapshot (`wireguard_ui.db`).
+  - [x] Telemetry history pruning (clean up bandwidth samples older than *X* days).
 
 ---
 

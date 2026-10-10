@@ -552,4 +552,26 @@ impl DbStore {
         samples.reverse();
         Ok(samples)
     }
+
+    pub fn prune_bandwidth_history(&self, older_than_seconds: i64) -> Result<usize> {
+        let conn = self.conn.lock().unwrap();
+        let now = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_secs() as i64;
+        let cutoff = now - older_than_seconds;
+        let deleted = conn.execute("DELETE FROM bandwidth_history WHERE timestamp < ?1;", params![cutoff])?;
+        Ok(deleted)
+    }
+
+    pub fn get_db_stats(&self) -> Result<(u64, u64)> {
+        let conn = self.conn.lock().unwrap();
+        let samples_count: i64 = conn
+            .query_row("SELECT COUNT(*) FROM bandwidth_history;", [], |r| r.get(0))
+            .unwrap_or(0);
+        let audit_count: i64 = conn
+            .query_row("SELECT COUNT(*) FROM audit_logs;", [], |r| r.get(0))
+            .unwrap_or(0);
+        Ok((samples_count as u64, audit_count as u64))
+    }
 }

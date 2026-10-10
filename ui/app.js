@@ -8,13 +8,15 @@ let clientViewMode = localStorage.getItem('wgui_client_view_mode') || 'grid';
 let siteSortOrder = localStorage.getItem('wgui_site_sort') || 'custom';
 let clientSortOrder = localStorage.getItem('wgui_client_sort') || 'custom';
 let isDraggingActive = false;
+let dashboardPollingTimer = null;
 
 document.addEventListener('DOMContentLoaded', () => {
     initNavigation();
     initViewControls();
+    loadAppPresets();
     loadInterfaces();
     loadDashboardData();
-    setInterval(loadDashboardData, 2000); // Live background telemetry refresh (2s)
+    startDashboardPolling();
 });
 
 function initViewControls() {
@@ -61,8 +63,8 @@ function switchTab(tabName) {
             sites: ['Site-to-Site Tunnels', 'Gateway-to-gateway subnet routing & persistent keepalives'],
             sitetosite: ['Site-to-Site Tunnels', 'Gateway-to-gateway subnet routing & persistent keepalives'],
             topology: ['Visual Network Topology', 'Hub-and-spoke mesh visualizer across connected gateways and clients'],
-            settings: ['Interface Configuration', 'WireGuard daemon port, IP address pool, and PostUp scripts'],
-            notifications: ['Notification & Alert Settings', 'Configure Webhook URLs, Ntfy access tokens, and push alerts'],
+            settings: ['Comprehensive Settings Hub', 'Multi-interface configuration, global presets, diagnostics and database maintenance'],
+            notifications: ['Comprehensive Settings Hub', 'Multi-interface configuration, global presets, diagnostics and database maintenance'],
             audit: ['Audit Logs', 'History of peer additions, configuration changes and interface events']
         };
 
@@ -72,7 +74,11 @@ function switchTab(tabName) {
         }
 
         if (tabName === 'topology') loadTopology();
-        if (tabName === 'settings' || tabName === 'notifications') loadSettings();
+        if (tabName === 'settings') loadSettings();
+        if (tabName === 'notifications') {
+            switchSettingsPane('pane-notifications');
+            loadSettings();
+        }
         if (tabName === 'audit') loadAuditLogs();
     }
 }
@@ -1237,6 +1243,33 @@ function populateInterfaceDropdown(selectId) {
 
 function openNewClientModal() {
     populateInterfaceDropdown('client-interface-select');
+
+    // Auto-suggest next available IP address
+    const iface = currentInterfaces.find(i => i.id === currentInterfaceId);
+    if (iface && iface.address_pool) {
+        const base = iface.address_pool.split('/')[0];
+        const parts = base.split('.');
+        if (parts.length === 4) {
+            const prefix = `${parts[0]}.${parts[1]}.${parts[2]}`;
+            const existingLastOctets = new Set();
+            (allPeersCache || []).filter(p => p.interface_id === currentInterfaceId).forEach(p => {
+                const pIp = (p.allowed_ips || '').split('/')[0].split(',')[0].trim();
+                const pParts = pIp.split('.');
+                if (pParts.length === 4 && pParts[0] === parts[0] && pParts[1] === parts[1] && pParts[2] === parts[2]) {
+                    existingLastOctets.add(parseInt(pParts[3], 10));
+                }
+            });
+            let nextNum = 2;
+            while (existingLastOctets.has(nextNum) && nextNum < 254) {
+                nextNum++;
+            }
+            const ipInput = document.getElementById('client-ip-input');
+            if (ipInput) {
+                ipInput.placeholder = `${prefix}.${nextNum}/32`;
+            }
+        }
+    }
+
     document.getElementById('modal-client').classList.add('active');
 }
 
@@ -1607,6 +1640,9 @@ function drawNode(svg, x, y, titleText, detailsText, color, isHub, angle, status
 // Settings
 function applySettingsToForm(iface) {
     if (!iface) return;
+    const titleEl = document.getElementById('settings-interface-title');
+    if (titleEl) titleEl.textContent = `🛡️ Interface: ${iface.id} (${iface.name || iface.id})`;
+
     const setVal = (id, v) => { const el = document.getElementById(id); if (el) el.value = v ?? ''; };
     setVal('setting-name', iface.name);
     setVal('setting-port', iface.listen_port);
@@ -1624,6 +1660,8 @@ function applySettingsToForm(iface) {
     setVal('setting-hub-subnets', iface.hub_subnets || '');
     setVal('setting-webhook', iface.webhook_url || '');
     setVal('setting-webhook-token', iface.webhook_token || '');
+
+    calculatePoolInspection();
 }
 
 async function loadSettings() {
@@ -1834,6 +1872,366 @@ async function sendTestNotification(btnEl) {
         if (btn) {
             btn.innerHTML = oldText || '🔔 Send Test Notification';
             btn.disabled = false;
+        }
+    }
+}
+
+// ============================================================================
+// Settings Hub Controller & Feature Handlers
+// ============================================================================
+
+function switchSettingsPane(paneId) {
+    document.querySelectorAll('.settings-nav-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.getAttribute('data-pane') === paneId);
+    });
+    document.querySelectorAll('.settings-pane').forEach(pane => {
+        pane.classList.toggle('active', pane.id === paneId);
+    });
+    if (paneId === 'pane-diagnostics') loadDiagnostics();
+    if (paneId === 'pane-backup') loadBackupStats();
+}
+
+function calculatePoolInspection() {
+    const poolInput = document.getElementById('setting-pool');
+    if (!poolInput) return;
+    const poolVal = poolInput.value.trim();
+    const badgeEl = document.getElementById('ip-pool-status-badge');
+    const rangeEl = document.getElementById('ip-stat-range');
+    const capEl = document.getElementById('ip-stat-capacity');
+    const allocEl = document.getElementById('ip-stat-allocated');
+    const progEl = document.getElementById('ip-stat-progress');
+
+    const cidrMatch = poolVal.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})\/(\d{1,2})$/);
+    if (!cidrMatch) {
+        if (badgeEl) {
+            badgeEl.textContent = 'Invalid CIDR';
+            badgeEl.className = 'metric-badge red';
+        }
+        if (rangeEl) rangeEl.textContent = 'Invalid Format';
+        if (capEl) capEl.textContent = '-';
+        return;
+    }
+
+    const [_, o1, o2, o3, o4, prefixStr] = cidrMatch;
+    const prefix = parseInt(prefixStr, 10);
+    if (prefix < 8 || prefix > 30) {
+        if (badgeEl) {
+            badgeEl.textContent = 'Prefix /8 - /30';
+            badgeEl.className = 'metric-badge red';
+        }
+        return;
+    }
+
+    if (badgeEl) {
+        badgeEl.textContent = `Valid /${prefix} Pool`;
+        badgeEl.className = 'metric-badge green';
+    }
+
+    const totalHosts = Math.pow(2, 32 - prefix) - 2;
+    const baseOctets = `${o1}.${o2}.${o3}`;
+    if (rangeEl) {
+        if (prefix >= 24) {
+            rangeEl.textContent = `${baseOctets}.2 - ${baseOctets}.${Math.min(254, totalHosts)}`;
+        } else {
+            rangeEl.textContent = `${o1}.${o2}.0.2 - Dynamic Hub Pool`;
+        }
+    }
+    if (capEl) capEl.textContent = `${totalHosts.toLocaleString()} Usable IPs`;
+
+    const peersOnIface = (allPeersCache || []).filter(p => p.interface_id === currentInterfaceId);
+    const peerCount = peersOnIface.length;
+    const percent = Math.min(100, Math.round((peerCount / Math.max(1, totalHosts)) * 100));
+
+    if (allocEl) allocEl.textContent = `${peerCount} Peers (${percent}%)`;
+    if (progEl) progEl.style.width = `${Math.max(2, percent)}%`;
+}
+
+function insertFirewallSnippet(type) {
+    const postUpEl = document.getElementById('setting-postup');
+    const postDownEl = document.getElementById('setting-postdown');
+    if (!postUpEl || !postDownEl) return;
+
+    let upRule = '';
+    let downRule = '';
+
+    if (type === 'nat') {
+        const egress = prompt('Enter egress physical network interface for NAT Masquerade (e.g. eth0, vmbr0):', 'vmbr0');
+        if (!egress) return;
+        upRule = `iptables -t nat -A POSTROUTING -o ${egress} -j MASQUERADE`;
+        downRule = `iptables -t nat -D POSTROUTING -o ${egress} -j MASQUERADE`;
+    } else if (type === 'forward') {
+        upRule = `iptables -A FORWARD -i %i -j ACCEPT; iptables -A FORWARD -o %i -j ACCEPT`;
+        downRule = `iptables -D FORWARD -i %i -j ACCEPT; iptables -D FORWARD -o %i -j ACCEPT`;
+    } else if (type === 'isolate') {
+        upRule = `iptables -I FORWARD -i %i -o %i -j DROP`;
+        downRule = `iptables -D FORWARD -i %i -o %i -j DROP`;
+    } else if (type === 'mss') {
+        upRule = `iptables -t mangle -A POSTROUTING -p tcp --tcp-flags SYN,RST SYN -o %i -j TCPMSS --clamp-mss-to-pmtu`;
+        downRule = `iptables -t mangle -D POSTROUTING -p tcp --tcp-flags SYN,RST SYN -o %i -j TCPMSS --clamp-mss-to-pmtu`;
+    }
+
+    if (upRule) {
+        postUpEl.value = postUpEl.value.trim() ? `${postUpEl.value.trim()}; ${upRule}` : upRule;
+        postDownEl.value = postDownEl.value.trim() ? `${postDownEl.value.trim()}; ${downRule}` : downRule;
+        showToast('Injected firewall rules into PostUp and PostDown!', 'success');
+    }
+}
+
+function clearFirewallScripts() {
+    if (confirm('Clear both PostUp and PostDown script areas?')) {
+        const postUpEl = document.getElementById('setting-postup');
+        const postDownEl = document.getElementById('setting-postdown');
+        if (postUpEl) postUpEl.value = '';
+        if (postDownEl) postDownEl.value = '';
+        showToast('Firewall scripts cleared', 'info');
+    }
+}
+
+async function derivePublicKeyFromPrivate() {
+    try {
+        const res = await fetch(`/api/interfaces/${currentInterfaceId}/derive-key`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({})
+        });
+        if (res.ok) {
+            const data = await res.json();
+            const pubEl = document.getElementById('setting-public-key');
+            if (pubEl && data.public_key) {
+                pubEl.value = data.public_key;
+                showToast('Curve25519 Public Key derived successfully!', 'success');
+            }
+        } else {
+            showToast('Failed to auto-derive public key', 'error');
+        }
+    } catch (err) {
+        console.error(err);
+        showToast('Error deriving public key', 'error');
+    }
+}
+
+async function forceKernelSync() {
+    try {
+        const res = await fetch(`/api/interfaces/${currentInterfaceId}/sync`, { method: 'POST' });
+        if (res.ok) {
+            showToast(`Kernel synchronized for ${currentInterfaceId} (wg syncconf)!`, 'success');
+            loadDashboardData();
+        } else {
+            showToast('Failed to synchronize kernel interface', 'error');
+        }
+    } catch (err) {
+        console.error(err);
+        showToast('Error syncing interface', 'error');
+    }
+}
+
+async function previewCurrentInterfaceConfig() {
+    try {
+        const res = await fetch(`/api/interfaces/${currentInterfaceId}/preview`);
+        if (res.ok) {
+            const data = await res.json();
+            document.getElementById('config-preview-title').textContent = `🛡️ Live Server Config Preview (${data.interface_id}.conf)`;
+            document.getElementById('config-preview-content').value = data.config;
+            document.getElementById('modal-config-preview').classList.add('active');
+        } else {
+            showToast('Could not generate server config preview', 'error');
+        }
+    } catch (err) {
+        console.error(err);
+        showToast('Error generating config preview', 'error');
+    }
+}
+
+async function copyConfigPreviewText() {
+    const el = document.getElementById('config-preview-content');
+    if (el && el.value) {
+        const copied = await copyToClipboard(el.value);
+        if (copied) {
+            showToast('Server configuration copied to clipboard!', 'success');
+        } else {
+            showToast('Failed to copy config to clipboard', 'error');
+        }
+    }
+}
+
+function saveAppPresets(e) {
+    if (e) e.preventDefault();
+    const mode = document.getElementById('preset-mode-split')?.checked ? 'split' : 'full';
+    const mtu = document.getElementById('preset-client-mtu')?.value || '1420';
+    const dns = document.getElementById('preset-client-dns')?.value || '1.1.1.1, 1.0.0.1';
+    const poll = document.getElementById('preset-polling-rate')?.value || '2000';
+
+    localStorage.setItem('wg_preset_mode', mode);
+    localStorage.setItem('wg_preset_mtu', mtu);
+    localStorage.setItem('wg_preset_dns', dns);
+    localStorage.setItem('wg_preset_poll', poll);
+
+    restartPollingWithInterval(parseInt(poll, 10));
+    showToast('App and client presets saved!', 'success');
+}
+
+function loadAppPresets() {
+    const mode = localStorage.getItem('wg_preset_mode') || 'full';
+    const mtu = localStorage.getItem('wg_preset_mtu') || '1420';
+    const dns = localStorage.getItem('wg_preset_dns') || '1.1.1.1, 1.0.0.1';
+    const poll = localStorage.getItem('wg_preset_poll') || '2000';
+
+    if (mode === 'split') {
+        const splitRadio = document.getElementById('preset-mode-split');
+        if (splitRadio) splitRadio.checked = true;
+    } else {
+        const fullRadio = document.getElementById('preset-mode-full');
+        if (fullRadio) fullRadio.checked = true;
+    }
+
+    const mtuEl = document.getElementById('preset-client-mtu');
+    if (mtuEl) mtuEl.value = mtu;
+
+    const dnsEl = document.getElementById('preset-client-dns');
+    if (dnsEl) dnsEl.value = dns;
+
+    const pollEl = document.getElementById('preset-polling-rate');
+    if (pollEl) pollEl.value = poll;
+}
+
+function setPresetMtu(val) {
+    const el = document.getElementById('preset-client-mtu');
+    if (el) el.value = val;
+}
+
+function setPresetDns(val) {
+    const el = document.getElementById('preset-client-dns');
+    if (el) el.value = val;
+}
+
+function startDashboardPolling() {
+    const savedRate = parseInt(localStorage.getItem('wg_preset_poll') || '2000', 10);
+    restartPollingWithInterval(savedRate);
+}
+
+function restartPollingWithInterval(intervalMs) {
+    if (dashboardPollingTimer) {
+        clearInterval(dashboardPollingTimer);
+    }
+    const safeInterval = Math.max(1000, isNaN(intervalMs) ? 2000 : intervalMs);
+    dashboardPollingTimer = setInterval(loadDashboardData, safeInterval);
+}
+
+async function loadDiagnostics() {
+    try {
+        const res = await fetch('/api/diagnostics');
+        if (res.ok) {
+            const data = await res.json();
+            const sshModeEl = document.getElementById('diag-ssh-mode');
+            const sshTargetEl = document.getElementById('diag-ssh-target');
+            const sshMuxEl = document.getElementById('diag-ssh-mux');
+
+            if (sshModeEl) {
+                sshModeEl.textContent = data.ssh_sync_enabled ? 'Remote SSH Sync' : 'Local Linux Host';
+                sshModeEl.style.color = data.ssh_sync_enabled ? 'var(--accent-cyan)' : 'var(--accent-green)';
+            }
+            if (sshTargetEl) sshTargetEl.textContent = data.ssh_target || 'N/A';
+            if (sshMuxEl) {
+                sshMuxEl.textContent = data.ssh_mux_active ? 'Active (OpenSSH Mux)' : 'Standby / Ready';
+                sshMuxEl.style.color = data.ssh_mux_active ? 'var(--accent-green)' : 'var(--text-muted)';
+            }
+        }
+    } catch (err) {
+        console.error('Failed to load diagnostics:', err);
+    }
+}
+
+async function testRemoteSshConnection(btn) {
+    if (btn) {
+        btn.textContent = '⏳ Testing Connection...';
+        btn.disabled = true;
+    }
+    const logEl = document.getElementById('diag-console-log');
+    const badgeEl = document.getElementById('diag-latency-badge');
+
+    if (logEl) logEl.textContent = 'Executing OpenSSH diagnostic check...';
+
+    try {
+        const res = await fetch('/api/diagnostics/ssh-test', { method: 'POST' });
+        if (res.ok) {
+            const data = await res.json();
+            if (badgeEl) {
+                badgeEl.textContent = `${data.latency_ms} ms RTT`;
+                badgeEl.className = data.success ? 'metric-badge green' : 'metric-badge red';
+                badgeEl.style.display = 'inline-block';
+            }
+            if (logEl) {
+                logEl.textContent = `[${new Date().toLocaleTimeString()}] Target: ${data.target} (Latency: ${data.latency_ms} ms)\nStatus: ${data.success ? 'SUCCESS' : 'FAILED'}\n\n${data.output}`;
+            }
+            showToast(data.success ? `SSH Test Passed (${data.latency_ms} ms)` : 'SSH Test Failed', data.success ? 'success' : 'error');
+        } else {
+            if (logEl) logEl.textContent = 'Failed to execute SSH test from server';
+            showToast('SSH Diagnostic failed', 'error');
+        }
+    } catch (err) {
+        if (logEl) logEl.textContent = 'Error: ' + err.message;
+        showToast('SSH Test error', 'error');
+    } finally {
+        if (btn) {
+            btn.textContent = '🔍 Test Remote SSH Connection & Latency';
+            btn.disabled = false;
+        }
+    }
+}
+
+async function loadBackupStats() {
+    try {
+        const res = await fetch('/api/database/stats');
+        if (res.ok) {
+            const data = await res.json();
+            const pathEl = document.getElementById('backup-db-path');
+            const sizeEl = document.getElementById('backup-db-size');
+            const samplesEl = document.getElementById('backup-db-samples');
+
+            if (pathEl) pathEl.textContent = data.db_path || 'wireguard_ui.db';
+            if (sizeEl) {
+                const bytes = data.db_size_bytes || 0;
+                sizeEl.textContent = bytes > 1048576 ? `${(bytes / 1048576).toFixed(2)} MB` : `${(bytes / 1024).toFixed(1)} KB`;
+            }
+            if (samplesEl) {
+                samplesEl.textContent = `${(data.bandwidth_samples_count || 0).toLocaleString()} samples (${(data.audit_logs_count || 0).toLocaleString()} audit logs)`;
+            }
+        }
+    } catch (err) {
+        console.error('Failed to load backup stats:', err);
+    }
+}
+
+function downloadDatabaseBackup() {
+    window.location.href = '/api/database/backup';
+    showToast('Database snapshot download initiated', 'info');
+}
+
+async function pruneBandwidthHistory(btn) {
+    const daysSelect = document.getElementById('prune-days-select');
+    const days = parseInt(daysSelect?.value || '7', 10);
+
+    if (confirm(`Are you sure you want to prune bandwidth samples older than ${days} days?`)) {
+        if (btn) btn.disabled = true;
+        try {
+            const res = await fetch('/api/analytics/prune', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ days })
+            });
+            if (res.ok) {
+                const data = await res.json();
+                showToast(data.message || 'Bandwidth history pruned successfully!', 'success');
+                loadBackupStats();
+                loadDashboardData();
+            } else {
+                showToast('Failed to prune bandwidth history', 'error');
+            }
+        } catch (err) {
+            console.error(err);
+            showToast('Error pruning bandwidth history', 'error');
+        } finally {
+            if (btn) btn.disabled = false;
         }
     }
 }

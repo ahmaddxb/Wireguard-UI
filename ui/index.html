@@ -45,7 +45,7 @@
                 </button>
                 <button class="nav-item" data-tab="settings">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-                    <span>Interface Settings</span>
+                    <span>Settings Hub</span>
                 </button>
                 <button class="nav-item" data-tab="notifications">
                     <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
@@ -323,123 +323,382 @@
                 </div>
             </div>
 
-            <!-- TAB 5: INTERFACE SETTINGS -->
+            <!-- TAB 5: COMPREHENSIVE SETTINGS HUB -->
             <div id="tab-settings" class="tab-content">
-                <div class="section-card max-w-700">
-                    <div class="section-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
-                        <h2>WireGuard Interface Configuration</h2>
-                        <div class="section-actions" style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
-                            <button type="button" class="btn btn-secondary" onclick="exportServerConfig()">
-                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-                                <span id="export-conf-btn-label">Export Config</span>
-                            </button>
-                            <button type="button" class="btn btn-primary" onclick="openNewInterfaceModal()" title="Create additional WireGuard interface">
-                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                                <span>New Interface</span>
-                            </button>
-                        </div>
-                    </div>
-                    <form id="settings-form" onsubmit="saveInterfaceSettings(event)">
-                        <div class="form-group">
-                            <label>Interface Name</label>
-                            <input type="text" id="setting-name" class="form-input" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Listen Port (UDP)</label>
-                            <input type="number" id="setting-port" class="form-input" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Address CIDR Pool (IPv4)</label>
-                            <input type="text" id="setting-pool" class="form-input" required>
-                        </div>
-                        <div class="form-group">
-                            <label>Address CIDR Pool (IPv6 Dual-Stack - Optional)</label>
-                            <input type="text" id="setting-pool-v6" class="form-input" placeholder="e.g. fd00:90::1/64">
-                        </div>
-                        <div class="form-group">
-                            <label>Client DNS Servers (IPv4)</label>
-                            <input type="text" id="setting-dns" class="form-input">
-                        </div>
-                        <div class="form-group">
-                            <label>Client DNS Servers (IPv6 - Optional)</label>
-                            <input type="text" id="setting-dns-v6" class="form-input" placeholder="e.g. 2606:4700:4700::1111, 2001:4860:4860::8888">
-                        </div>
-                        <div class="form-group">
-                            <label>MTU (Maximum Transmission Unit)</label>
-                            <input type="number" id="setting-mtu" class="form-input" placeholder="1420" value="1420">
-                            <div style="color: var(--text-muted); font-size: 0.8em; margin-top: 0.3rem;">Default: 1420. Set lower (e.g. 1360 or 1280) if passing over PPPoE/cellular or experiencing fragmentation.</div>
-                        </div>
-                        <div class="form-group" style="flex-direction: row; align-items: center; gap: 0.75rem; margin-top: 0.5rem; background: rgba(255, 255, 255, 0.02); padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color);">
-                            <input type="checkbox" id="setting-mss-clamping" checked style="width: 18px; height: 18px; cursor: pointer;">
-                            <div>
-                                <label for="setting-mss-clamping" style="cursor: pointer; margin-bottom: 0; font-weight: 600; color: var(--text-primary);">Enable Automatic TCP MSS Clamping (--clamp-mss-to-pmtu)</label>
-                                <div style="color: var(--text-muted); font-size: 0.8em;">Automatically inserts iptables mangle rules in PostUp/PostDown to prevent packet fragmentation on high MTU streams.</div>
-                            </div>
-                        </div>
-                        <div class="form-group" style="margin-top: 1rem;">
-                            <label>PostUp Script</label>
-                            <textarea id="setting-postup" class="form-input code-input" rows="2"></textarea>
-                        </div>
-                        <div class="form-group">
-                            <label>PostDown Script</label>
-                            <textarea id="setting-postdown" class="form-input code-input" rows="2"></textarea>
-                        </div>
-                        <div class="form-group">
-                            <label>Gateway Public Key <span style="color: var(--text-muted); font-size: 0.82em;">(Public key of the WireGuard hub — used in remote peer configs)</span></label>
-                            <input type="text" id="setting-public-key" class="form-input" placeholder="Base64 encoded public key from wg show wg0 public-key" spellcheck="false" autocomplete="off">
-                        </div>
-                        <div class="form-group">
-                            <label>Gateway Endpoint <span style="color: var(--text-muted); font-size: 0.82em;">(Public IP or hostname used in generated remote peer configs)</span></label>
-                            <div style="display: flex; gap: 0.5rem; align-items: center;">
-                                <input type="text" id="setting-gateway-endpoint" class="form-input" placeholder="e.g. 192.168.1.101 or vpn.example.com" spellcheck="false" autocomplete="off" style="flex: 1;">
-                                <button type="button" class="btn btn-secondary" onclick="detectGatewayEndpoint()" style="white-space: nowrap; padding: 0.5rem 1rem;">🔍 Auto-Detect</button>
-                            </div>
-                            <div style="color: var(--text-muted); font-size: 0.8em; margin-top: 0.3rem;">Port is appended automatically from Listen Port. Leave blank to use SSH_HOST env var.</div>
-                        </div>
-                        <div class="form-group">
-                            <label>Hub LAN / Routed Subnets <span style="color: var(--text-muted); font-size: 0.82em;">(Local subnets behind the Hub accessible by remote sites)</span></label>
-                            <div style="display: flex; gap: 0.5rem; align-items: center;">
-                                <input type="text" id="setting-hub-subnets" class="form-input" placeholder="e.g. 10.1.100.0/24, 192.168.1.0/24" spellcheck="false" autocomplete="off" style="flex: 1;">
-                                <button type="button" class="btn btn-secondary" onclick="detectHubSubnets()" style="white-space: nowrap; padding: 0.5rem 1rem;">🔍 Auto-Detect</button>
-                            </div>
-                            <div style="color: var(--text-muted); font-size: 0.8em; margin-top: 0.3rem;">These subnets are appended to <code>AllowedIPs</code> in generated remote site-to-site peer configurations.</div>
-                        </div>
-                        <button type="submit" class="btn btn-primary" style="margin-top: 1rem;">Save Interface Settings</button>
-                    </form>
+                <!-- Settings Sub-Navigation Bar -->
+                <div class="settings-subnav">
+                    <button type="button" class="settings-nav-btn active" data-pane="pane-interfaces" onclick="switchSettingsPane('pane-interfaces')">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                        <span>WireGuard Interfaces</span>
+                    </button>
+                    <button type="button" class="settings-nav-btn" data-pane="pane-presets" onclick="switchSettingsPane('pane-presets')">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                        <span>App & Client Presets</span>
+                    </button>
+                    <button type="button" class="settings-nav-btn" data-pane="pane-notifications" onclick="switchSettingsPane('pane-notifications')">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+                        <span>Notifications & Alerts</span>
+                    </button>
+                    <button type="button" class="settings-nav-btn" data-pane="pane-diagnostics" onclick="switchSettingsPane('pane-diagnostics')">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+                        <span>Engine & Diagnostics</span>
+                    </button>
+                    <button type="button" class="settings-nav-btn" data-pane="pane-backup" onclick="switchSettingsPane('pane-backup')">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg>
+                        <span>Backup & Maintenance</span>
+                    </button>
                 </div>
-            </div>
 
-            <!-- TAB 6: NOTIFICATIONS & ALERTS -->
-            <div id="tab-notifications" class="tab-content">
-                <div class="section-card max-w-700">
-                    <div class="section-header">
-                        <h2>🔔 Notification & Alert Webhook Settings</h2>
+                <!-- PANE 1: WIREGUARD INTERFACES -->
+                <div id="pane-interfaces" class="settings-pane active">
+                    <div class="settings-card max-w-700">
+                        <div class="settings-card-header">
+                            <div class="settings-card-title">
+                                <span id="settings-interface-title">🛡️ Interface Configuration</span>
+                            </div>
+                            <div class="section-actions" style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                                <button type="button" class="btn btn-secondary" onclick="previewCurrentInterfaceConfig()" title="Live preview of generated wireguard config">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+                                    <span>Live Preview</span>
+                                </button>
+                                <button type="button" class="btn btn-secondary" onclick="forceKernelSync()" title="Synchronize kernel with live wg syncconf">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+                                    <span>Force Sync</span>
+                                </button>
+                                <button type="button" class="btn btn-secondary" onclick="exportServerConfig()">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                                    <span>Export</span>
+                                </button>
+                                <button type="button" class="btn btn-primary" onclick="openNewInterfaceModal()" title="Create additional WireGuard interface">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                                    <span>New Interface</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Live IP Pool Inspector Banner -->
+                        <div id="ip-inspector" class="ip-inspector-box">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <span style="font-size: 1.1rem;">🧮</span>
+                                    <strong style="color: var(--text-main); font-size: 0.9rem;">Live IP Pool Inspector</strong>
+                                </div>
+                                <span id="ip-pool-status-badge" class="metric-badge green">Valid CIDR</span>
+                            </div>
+                            <div class="ip-inspector-stats">
+                                <div class="ip-stat-item">
+                                    <span class="ip-stat-label">Usable Host Range</span>
+                                    <span id="ip-stat-range" class="ip-stat-value">10.100.90.2 - 10.100.90.254</span>
+                                </div>
+                                <div class="ip-stat-item">
+                                    <span class="ip-stat-label">Total Pool Capacity</span>
+                                    <span id="ip-stat-capacity" class="ip-stat-value">253 IPs</span>
+                                </div>
+                                <div class="ip-stat-item">
+                                    <span class="ip-stat-label">Allocated Peers</span>
+                                    <span id="ip-stat-allocated" class="ip-stat-value">0 Peers (0%)</span>
+                                </div>
+                            </div>
+                            <div class="ip-progress-bar">
+                                <div id="ip-stat-progress" class="ip-progress-fill" style="width: 0%;"></div>
+                            </div>
+                        </div>
+
+                        <form id="settings-form" onsubmit="saveInterfaceSettings(event)">
+                            <div class="form-group">
+                                <label>Interface Name</label>
+                                <input type="text" id="setting-name" class="form-input" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Listen Port (UDP)</label>
+                                <input type="number" id="setting-port" class="form-input" required min="1" max="65535">
+                            </div>
+                            <div class="form-group">
+                                <label>Address CIDR Pool (IPv4)</label>
+                                <input type="text" id="setting-pool" class="form-input" required oninput="calculatePoolInspection()">
+                            </div>
+                            <div class="form-group">
+                                <label>Address CIDR Pool (IPv6 Dual-Stack - Optional)</label>
+                                <input type="text" id="setting-pool-v6" class="form-input" placeholder="e.g. fd00:90::1/64">
+                            </div>
+                            <div class="form-group">
+                                <label>Client DNS Servers (IPv4)</label>
+                                <input type="text" id="setting-dns" class="form-input">
+                            </div>
+                            <div class="form-group">
+                                <label>Client DNS Servers (IPv6 - Optional)</label>
+                                <input type="text" id="setting-dns-v6" class="form-input" placeholder="e.g. 2606:4700:4700::1111, 2001:4860:4860::8888">
+                            </div>
+                            <div class="form-group">
+                                <label>MTU (Maximum Transmission Unit)</label>
+                                <input type="number" id="setting-mtu" class="form-input" placeholder="1420" value="1420">
+                                <div style="color: var(--text-muted); font-size: 0.8em; margin-top: 0.3rem;">Default: 1420. Set lower (e.g. 1360 or 1280) if passing over PPPoE/cellular networks.</div>
+                            </div>
+                            <div class="form-group" style="flex-direction: row; align-items: center; gap: 0.75rem; margin-top: 0.5rem; background: rgba(255, 255, 255, 0.02); padding: 0.75rem; border-radius: 8px; border: 1px solid var(--border-color);">
+                                <input type="checkbox" id="setting-mss-clamping" checked style="width: 18px; height: 18px; cursor: pointer;">
+                                <div>
+                                    <label for="setting-mss-clamping" style="cursor: pointer; margin-bottom: 0; font-weight: 600; color: var(--text-primary);">Enable Automatic TCP MSS Clamping (--clamp-mss-to-pmtu)</label>
+                                    <div style="color: var(--text-muted); font-size: 0.8em;">Automatically inserts iptables mangle rules in PostUp/PostDown to prevent packet fragmentation.</div>
+                                </div>
+                            </div>
+
+                            <!-- Gateway Public Key with Auto-Derive -->
+                            <div class="form-group" style="margin-top: 1rem;">
+                                <label>Gateway Public Key <span style="color: var(--text-muted); font-size: 0.82em;">(Public key of this WireGuard server)</span></label>
+                                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                    <input type="text" id="setting-public-key" class="form-input" placeholder="Base64 encoded public key" spellcheck="false" autocomplete="off" style="flex: 1;">
+                                    <button type="button" class="btn btn-secondary" onclick="derivePublicKeyFromPrivate()" style="white-space: nowrap; padding: 0.5rem 0.85rem;" title="Auto-derive public key from server private key">🔑 Auto-Derive</button>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Gateway Endpoint <span style="color: var(--text-muted); font-size: 0.82em;">(Public IP or hostname used in generated peer configs)</span></label>
+                                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                    <input type="text" id="setting-gateway-endpoint" class="form-input" placeholder="e.g. 192.168.1.101 or vpn.example.com" spellcheck="false" autocomplete="off" style="flex: 1;">
+                                    <button type="button" class="btn btn-secondary" onclick="detectGatewayEndpoint()" style="white-space: nowrap; padding: 0.5rem 1rem;">🔍 Auto-Detect</button>
+                                </div>
+                                <div style="color: var(--text-muted); font-size: 0.8em; margin-top: 0.3rem;">Port is appended automatically from Listen Port. Leave blank to use SSH_HOST env var.</div>
+                            </div>
+                            <div class="form-group">
+                                <label>Hub LAN / Routed Subnets <span style="color: var(--text-muted); font-size: 0.82em;">(Local subnets behind the Hub accessible by remote sites)</span></label>
+                                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                    <input type="text" id="setting-hub-subnets" class="form-input" placeholder="e.g. 10.1.100.0/24, 192.168.1.0/24" spellcheck="false" autocomplete="off" style="flex: 1;">
+                                    <button type="button" class="btn btn-secondary" onclick="detectHubSubnets()" style="white-space: nowrap; padding: 0.5rem 1rem;">🔍 Auto-Detect</button>
+                                </div>
+                                <div style="color: var(--text-muted); font-size: 0.8em; margin-top: 0.3rem;">These subnets are appended to <code>AllowedIPs</code> in generated remote site-to-site peer configurations.</div>
+                            </div>
+
+                            <!-- Firewall Scripts & 1-Click Snippets -->
+                            <div class="form-group" style="margin-top: 1.25rem;">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+                                    <label style="margin-bottom: 0;">PostUp & PostDown Firewall Scripts</label>
+                                    <span style="font-size: 0.78rem; color: var(--text-muted);">1-Click Presets:</span>
+                                </div>
+                                <div class="firewall-snippets-bar">
+                                    <button type="button" class="snippet-btn" onclick="insertFirewallSnippet('nat')" title="Inject paired NAT Masquerade rule into PostUp and PostDown">
+                                        🌐 + NAT Masquerade
+                                    </button>
+                                    <button type="button" class="snippet-btn" onclick="insertFirewallSnippet('forward')" title="Inject bidirectional forward ACCEPT rules">
+                                        🔀 + LAN Forwarding
+                                    </button>
+                                    <button type="button" class="snippet-btn" onclick="insertFirewallSnippet('isolate')" title="Inject Zero-trust peer isolation DROP rule">
+                                        🛡️ + Client Isolation
+                                    </button>
+                                    <button type="button" class="snippet-btn" onclick="insertFirewallSnippet('mss')" title="Inject TCP MSS clamping rule">
+                                        ⚡ + MSS Clamping
+                                    </button>
+                                    <button type="button" class="snippet-btn danger" onclick="clearFirewallScripts()" title="Safely clear both PostUp and PostDown">
+                                        🗑️ Clear
+                                    </button>
+                                </div>
+
+                                <label style="font-size: 0.82rem; color: var(--text-muted); margin-top: 0.5rem;">PostUp Script</label>
+                                <textarea id="setting-postup" class="form-input code-input" rows="2" placeholder="iptables setup commands executed when interface goes up"></textarea>
+
+                                <label style="font-size: 0.82rem; color: var(--text-muted); margin-top: 0.5rem;">PostDown Script</label>
+                                <textarea id="setting-postdown" class="form-input code-input" rows="2" placeholder="iptables teardown commands executed when interface goes down"></textarea>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary" style="margin-top: 1.25rem; width: 100%; justify-content: center;">Save Interface Settings</button>
+                        </form>
                     </div>
-                    <p style="color: var(--text-muted); margin-bottom: 1.5rem; font-size: 0.9rem;">
-                        Configure automated push notifications for tunnel Online/Offline status transitions via Ntfy, Telegram, Discord, or custom HTTP webhooks.
-                    </p>
-                    <form id="notifications-form" onsubmit="saveNotificationSettings(event)">
-                        <div class="form-group">
-                            <label>Alert Webhook URL (Ntfy / Telegram / Discord / Custom HTTP)</label>
-                            <input type="text" id="setting-webhook" class="form-input" placeholder="e.g. https://ntfy.ahmaddxb.xyz/WireguardUI">
+                </div>
+
+                <!-- PANE 2: APP & CLIENT PRESETS -->
+                <div id="pane-presets" class="settings-pane">
+                    <div class="settings-card max-w-700">
+                        <div class="settings-card-header">
+                            <div class="settings-card-title">
+                                <span>⚙️ Global Client & App Defaults</span>
+                            </div>
                         </div>
-                        <div class="form-group">
-                            <label>Alert Webhook Auth Token / Ntfy Token / Traefik Key (Optional)</label>
-                            <input type="password" id="setting-webhook-token" class="form-input" placeholder="e.g. Basic YWRtaW46... or Bearer token">
+                        <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 1.25rem;">
+                            These defaults are automatically pre-filled when creating new Roadwarrior and Site-to-Site VPN clients.
+                        </p>
+                        <form onsubmit="saveAppPresets(event)">
+                            <div class="form-group">
+                                <label>Default Tunnel Mode for New Clients</label>
+                                <div style="display: flex; gap: 1rem; margin-top: 0.4rem; flex-wrap: wrap;">
+                                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-weight: normal; color: var(--text-main);">
+                                        <input type="radio" name="preset-tunnel-mode" value="full" id="preset-mode-full" checked>
+                                        <span><strong>Full Tunnel</strong> (0.0.0.0/0, ::/0) - All client traffic</span>
+                                    </label>
+                                    <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-weight: normal; color: var(--text-main);">
+                                        <input type="radio" name="preset-tunnel-mode" value="split" id="preset-mode-split">
+                                        <span><strong>Split Tunnel</strong> (Hub LAN only)</span>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Default Client MTU</label>
+                                <input type="number" id="preset-client-mtu" class="form-input" value="1420">
+                                <div class="preset-pills">
+                                    <button type="button" class="preset-pill" onclick="setPresetMtu(1420)">1420 (Standard WireGuard)</button>
+                                    <button type="button" class="preset-pill" onclick="setPresetMtu(1280)">1280 (Mobile / Cellular / 4G / 5G)</button>
+                                    <button type="button" class="preset-pill" onclick="setPresetMtu(1360)">1360 (PPPoE / DSL)</button>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Default Client DNS Servers</label>
+                                <input type="text" id="preset-client-dns" class="form-input" value="1.1.1.1, 1.0.0.1">
+                                <div class="preset-pills">
+                                    <button type="button" class="preset-pill" onclick="setPresetDns('1.1.1.1, 1.0.0.1')">Cloudflare (1.1.1.1)</button>
+                                    <button type="button" class="preset-pill" onclick="setPresetDns('8.8.8.8, 8.8.4.4')">Google (8.8.8.8)</button>
+                                    <button type="button" class="preset-pill" onclick="setPresetDns('94.140.14.14, 94.140.15.15')">AdGuard Adblock (94.140.14.14)</button>
+                                    <button type="button" class="preset-pill" onclick="setPresetDns('9.9.9.9, 149.112.112.112')">Quad9 (9.9.9.9)</button>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>Dashboard Telemetry Polling Rate</label>
+                                <select id="preset-polling-rate" class="form-input">
+                                    <option value="1000">1 Second (Ultra Real-Time Telemetry)</option>
+                                    <option value="2000" selected>2 Seconds (Default Smooth)</option>
+                                    <option value="5000">5 Seconds (Balanced)</option>
+                                    <option value="10000">10 Seconds (Eco / Low Resource)</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn btn-primary" style="margin-top: 1rem;">Save App & Client Presets</button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- PANE 3: NOTIFICATIONS & ALERTS -->
+                <div id="pane-notifications" class="settings-pane">
+                    <div class="settings-card max-w-700">
+                        <div class="settings-card-header">
+                            <div class="settings-card-title">
+                                <span>🔔 Notification & Alert Webhook Settings</span>
+                            </div>
                         </div>
-                        <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem; font-size: 0.85rem; color: var(--text-secondary);">
-                            <strong style="color: var(--text-primary);">💡 Quick Setup Guide:</strong>
-                            <ul style="margin-top: 0.5rem; padding-left: 1.2rem; line-height: 1.6;">
-                                <li><strong>Ntfy (Public/Self-hosted):</strong> Set URL to <code>https://ntfy.sh/topic</code> or <code>https://ntfy.domain.com/topic</code>.</li>
-                                <li><strong>Traefik / Authentik Bypass Token:</strong> Set token to <code>Basic &lt;base64_key&gt;</code> or <code>Bearer &lt;token&gt;</code>.</li>
-                                <li><strong>Discord / Slack:</strong> Set URL to your Discord/Slack Webhook endpoint.</li>
-                            </ul>
+                        <p style="color: var(--text-muted); margin-bottom: 1.5rem; font-size: 0.9rem;">
+                            Configure automated push notifications for tunnel Online/Offline status transitions via Ntfy, Telegram, Discord, or custom HTTP webhooks.
+                        </p>
+                        <form id="notifications-form" onsubmit="saveNotificationSettings(event)">
+                            <div class="form-group">
+                                <label>Alert Webhook URL (Ntfy / Telegram / Discord / Custom HTTP)</label>
+                                <input type="text" id="setting-webhook" class="form-input" placeholder="e.g. https://ntfy.ahmaddxb.xyz/WireguardUI">
+                            </div>
+                            <div class="form-group">
+                                <label>Alert Webhook Auth Token / Ntfy Token / Traefik Key (Optional)</label>
+                                <input type="password" id="setting-webhook-token" class="form-input" placeholder="e.g. Basic YWRtaW46... or Bearer token">
+                            </div>
+                            <div style="background: rgba(255,255,255,0.03); border: 1px solid var(--border-color); border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem; font-size: 0.85rem; color: var(--text-secondary);">
+                                <strong style="color: var(--text-primary);">💡 Quick Setup Guide:</strong>
+                                <ul style="margin-top: 0.5rem; padding-left: 1.2rem; line-height: 1.6;">
+                                    <li><strong>Ntfy (Public/Self-hosted):</strong> Set URL to <code>https://ntfy.sh/topic</code> or <code>https://ntfy.domain.com/topic</code>.</li>
+                                    <li><strong>Traefik / Authentik Bypass Token:</strong> Set token to <code>Basic &lt;base64_key&gt;</code> or <code>Bearer &lt;token&gt;</code>.</li>
+                                    <li><strong>Discord / Slack:</strong> Set URL to your Discord/Slack Webhook endpoint.</li>
+                                </ul>
+                            </div>
+                            <div style="display: flex; gap: 1rem; align-items: center; margin-top: 1.5rem; flex-wrap: wrap;">
+                                <button type="submit" class="btn btn-primary">Save Notification Settings</button>
+                                <button type="button" class="btn btn-secondary" onclick="sendTestNotification(this)">🔔 Send Test Notification</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- PANE 4: ENGINE & DIAGNOSTICS -->
+                <div id="pane-diagnostics" class="settings-pane">
+                    <div class="settings-card max-w-700">
+                        <div class="settings-card-header">
+                            <div class="settings-card-title">
+                                <span>🖥️ Hypervisor & Engine Diagnostics</span>
+                            </div>
+                            <button type="button" class="btn btn-secondary" onclick="loadDiagnostics()" style="padding: 0.4rem 0.8rem; font-size: 0.8rem;">🔄 Refresh</button>
                         </div>
-                        <div style="display: flex; gap: 1rem; align-items: center; margin-top: 1.5rem;">
-                            <button type="submit" class="btn btn-primary">Save Notification Settings</button>
-                            <button type="button" class="btn btn-secondary" onclick="sendTestNotification(this)">🔔 Send Test Notification</button>
+                        <div class="diag-stat-grid">
+                            <div class="diag-stat-card">
+                                <div class="ip-stat-label">SSH Orchestration</div>
+                                <div id="diag-ssh-mode" class="ip-stat-value" style="color: var(--accent-cyan);">Checking...</div>
+                            </div>
+                            <div class="diag-stat-card">
+                                <div class="ip-stat-label">Target Host</div>
+                                <div id="diag-ssh-target" class="ip-stat-value">Checking...</div>
+                            </div>
+                            <div class="diag-stat-card">
+                                <div class="ip-stat-label">Multiplexing Socket</div>
+                                <div id="diag-ssh-mux" class="ip-stat-value">Checking...</div>
+                            </div>
+                            <div class="diag-stat-card">
+                                <div class="ip-stat-label">Kernel Daemon</div>
+                                <div class="ip-stat-value" style="color: var(--accent-green);">Zero-Downtime Active</div>
+                            </div>
                         </div>
-                    </form>
+
+                        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 1rem;">
+                            <button type="button" class="btn btn-primary" onclick="testRemoteSshConnection(this)">
+                                🔍 Test Remote SSH Connection & Latency
+                            </button>
+                            <button type="button" class="btn btn-secondary" onclick="forceKernelSync()">
+                                ⚡ Force Kernel Sync (`wg syncconf`)
+                            </button>
+                        </div>
+
+                        <!-- Terminal Output Console -->
+                        <div style="margin-top: 1.25rem;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <span style="font-size: 0.8rem; color: var(--text-muted); font-family: var(--font-mono);">DIAGNOSTIC TERMINAL LOG</span>
+                                <span id="diag-latency-badge" class="metric-badge green" style="display: none;">0 ms</span>
+                            </div>
+                            <pre id="diag-console-log" class="diag-console">Ready to run remote hypervisor diagnostic tests.</pre>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PANE 5: BACKUP & MAINTENANCE -->
+                <div id="pane-backup" class="settings-pane">
+                    <div class="settings-grid max-w-700">
+                        <div class="settings-card">
+                            <div class="settings-card-header">
+                                <div class="settings-card-title">
+                                    <span>💾 SQLite Database Snapshot</span>
+                                </div>
+                            </div>
+                            <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 1.25rem;">
+                                Download a full binary snapshot of your active SQLite database containing all interfaces, peer configurations, audit logs, and bandwidth history.
+                            </p>
+                            <div class="ip-inspector-stats" style="margin-bottom: 1.25rem;">
+                                <div class="ip-stat-item">
+                                    <span class="ip-stat-label">Database Path</span>
+                                    <span id="backup-db-path" class="ip-stat-value">wireguard_ui.db</span>
+                                </div>
+                                <div class="ip-stat-item">
+                                    <span class="ip-stat-label">Database File Size</span>
+                                    <span id="backup-db-size" class="ip-stat-value">Checking...</span>
+                                </div>
+                                <div class="ip-stat-item">
+                                    <span class="ip-stat-label">Bandwidth Samples</span>
+                                    <span id="backup-db-samples" class="ip-stat-value">Checking...</span>
+                                </div>
+                            </div>
+                            <button type="button" class="btn btn-primary" onclick="downloadDatabaseBackup()">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                                <span>Download Database Snapshot (.db)</span>
+                            </button>
+                        </div>
+
+                        <div class="settings-card">
+                            <div class="settings-card-header">
+                                <div class="settings-card-title">
+                                    <span>🧹 Telemetry & History Pruning</span>
+                                </div>
+                            </div>
+                            <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 1rem;">
+                                Prune older bandwidth historical telemetry samples to optimize database performance and shrink storage footprint.
+                            </p>
+                            <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+                                <select id="prune-days-select" class="form-input" style="width: auto; min-width: 180px;">
+                                    <option value="7">Older than 7 Days</option>
+                                    <option value="14">Older than 14 Days</option>
+                                    <option value="30">Older than 30 Days</option>
+                                    <option value="1">Older than 24 Hours</option>
+                                </select>
+                                <button type="button" class="btn btn-secondary" onclick="pruneBandwidthHistory(this)">
+                                    <span>🧹 Prune Old Samples</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -935,6 +1194,29 @@
                     <button type="submit" class="btn btn-primary">Create Interface</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- MODAL: SERVER CONFIG PREVIEW -->
+    <div id="modal-config-preview" class="modal-overlay">
+        <div class="modal-card modal-large" style="max-width: 760px; width: 95%;">
+            <div class="modal-header">
+                <h3 id="config-preview-title">🛡️ Live Server Configuration Preview</h3>
+                <button class="close-btn" onclick="closeModals()">&times;</button>
+            </div>
+            <p style="color: var(--text-muted); font-size: 0.85rem; margin-bottom: 0.75rem;">
+                This is the complete, dynamically assembled WireGuard server configuration including all interface settings, PostUp firewall rules, and active peers.
+            </p>
+            <div class="form-group">
+                <textarea id="config-preview-content" class="form-input code-input" rows="18" readonly style="font-family: var(--font-mono); font-size: 0.82rem; line-height: 1.45; white-space: pre; background: #050811; color: #38bdf8;"></textarea>
+            </div>
+            <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem;">
+                <button type="button" class="btn btn-secondary" onclick="copyConfigPreviewText()">📋 Copy to Clipboard</button>
+                <div style="display: flex; gap: 0.5rem;">
+                    <button type="button" class="btn btn-secondary" onclick="closeModals()">Close</button>
+                    <button type="button" class="btn btn-primary" onclick="exportServerConfig()">📥 Download .conf</button>
+                </div>
+            </div>
         </div>
     </div>
 

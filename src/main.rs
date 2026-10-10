@@ -48,6 +48,9 @@ async fn main() {
         .route("/interfaces/:id", get(get_interface_by_id_handler).put(update_interface_by_id_handler).delete(delete_interface_handler))
         .route("/interfaces/:id/overview", get(get_interface_overview))
         .route("/interfaces/:id/export", get(export_interface_config_handler))
+        .route("/interfaces/:id/sync", post(sync_interface_handler))
+        .route("/interfaces/:id/preview", get(preview_interface_config_handler))
+        .route("/interfaces/:id/derive-key", post(derive_interface_key_handler))
         .route("/interface", get(get_interface).put(update_interface))
         .route("/interface/detect-subnets", get(detect_subnets_handler))
         .route("/peers", get(list_peers))
@@ -63,7 +66,12 @@ async fn main() {
         .route("/iperf3/run", post(run_custom_iperf3))
         .route("/config/export", get(export_server_config))
         .route("/analytics/bandwidth", get(get_bandwidth_analytics))
+        .route("/analytics/prune", post(prune_bandwidth_handler))
         .route("/notifications/test", post(send_test_notification))
+        .route("/diagnostics", get(get_diagnostics_handler))
+        .route("/diagnostics/ssh-test", post(test_ssh_handler))
+        .route("/database/backup", get(download_db_backup_handler))
+        .route("/database/stats", get(get_db_stats_handler))
         .route("/logs", get(get_logs))
         .route("/topology", get(get_topology))
         .with_state(store.clone());
@@ -971,4 +979,208 @@ async fn get_topology(State(store): State<DbStore>) -> Result<Json<TopologyData>
     }
 
     Ok(Json(TopologyData { nodes, links }))
+}
+
+// ============================================================================
+// Settings Hub, Diagnostics & Database Handlers
+// ============================================================================
+
+async fn sync_interface_handler(
+    State(store): State<DbStore>,
+    Path(id): Path<String>,
+) -> Result<Json<serde_json::Value>, (StatusCode, Json<serde_json::Value>)> {
+    let iface = store.get_interface_by_id(&id)
+        .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, Json(serde_json::json!({"error": "Database error"}))))?
+        .ok_or_else(|| (StatusCode::NOT_FOUND, Json(serde_json::json!({"error": "Interface not found"}))))?;
+
+    let peers = store.get_peers_by_interface(&iface.id)
+        .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, Json(serde_json::json!({"error": "Failed to load peers"}))))?;
+
+    wg_engine::apply_wireguard_config(&iface, &peers, false);
+    let _ = store.add_audit_log("SYNC_INTERFACE", &iface.name, &format!("Forced kernel syncconf for {}", iface.id));
+
+    Ok(Json(serde_json::json!({
+        "status": "success",
+        "message": format!("Successfully synchronized {} kernel state via wg syncconf", iface.id)
+    })))
+}
+
+async fn preview_interface_config_handler(
+    State(store): State<DbStore>,
+    Path(id): Path<String>,
+) -> Result<Json<serde_json::Value>, StatusCode> {
+    let iface = store.get_interface_by_id(&id)
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?
+        .ok_or(StatusCode::NOT_FOUND)?;
+    let peers = store.get_peers_by_interface(&iface.id)
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    let server_conf = wg_engine::build_server_config(&iface, &peers);
+    Ok(Json(serde_json::json!({
+        "interface_id": iface.id,
+        "config": server_conf
+    })))
+}
+
+#[derive(serde::Deserialize)]
+struct DeriveKeyPayload {
+    private_key: Option<String>,
+}
+
+async fn derive_interface_key_handler(
+    State(store): State<DbStore>,
+    Path(id): Path<String>,
+    Json(payload): Json<DeriveKeyPayload>,
+) -> Result<Json<serde_json::Value>, (StatusCode, Json<serde_json::Value>)> {
+    let priv_key = if let Some(pk) = payload.private_key.filter(|k| !k.trim().is_empty()) {
+        pk
+    } else {
+        let iface = store.get_interface_by_id(&id)
+            .map_err(|_| (StatusCode::INTERNAL_SERVER_ERROR, Json(serde_json::json!({"error": "Database error"}))))?
+            .ok_or_else(|| (StatusCode::NOT_FOUND, Json(serde_json::json!({"error": "Interface not found"}))))?;
+        iface.private_key
+    };
+
+    if let Some(pubkey) = wg_engine::derive_public_key(&priv_key) {
+        Ok(Json(serde_json::json!({
+            "public_key": pubkey
+        })))
+    } else {
+        Err((StatusCode::BAD_REQUEST, Json(serde_json::json!({
+            "error": "Could not derive Curve25519 public key. Ensure private key is a valid 32-byte Base64 key."
+        }))))
+    }
+}
+
+async fn get_diagnostics_handler(State(store): State<DbStore>) -> Result<Json<serde_json::Value>, StatusCode> {
+    let is_ssh = wg_engine::is_ssh_sync_enabled();
+    let ssh_target = wg_engine::get_ssh_target();
+    let ssh_host = std::env::var("SSH_HOST").unwrap_or_else(|_| "192.168.1.101".into());
+    let ssh_user = std::env::var("SSH_USER").unwrap_or_else(|_| "root".into());
+    let db_path = std::env::var("DB_PATH").unwrap_or_else(|_| "wireguard_ui.db".into());
+    
+    let db_size = std::fs::metadata(&db_path).map(|m| m.len()).unwrap_or(0);
+    let (sample_count, audit_count) = store.get_db_stats().unwrap_or((0, 0));
+
+    let mux_socket = format!("/tmp/ssh_mux_{}_22_{}", ssh_host, ssh_user);
+    let mux_active = std::path::Path::new(&mux_socket).exists() || std::path::Path::new("/tmp").read_dir().map(|mut r| {
+        r.any(|e| e.map(|entry| entry.file_name().to_string_lossy().starts_with("ssh_mux_")).unwrap_or(false))
+    }).unwrap_or(false);
+
+    Ok(Json(serde_json::json!({
+        "ssh_sync_enabled": is_ssh,
+        "ssh_target": ssh_target,
+        "ssh_host": ssh_host,
+        "ssh_user": ssh_user,
+        "ssh_mux_active": mux_active,
+        "db_path": db_path,
+        "db_size_bytes": db_size,
+        "bandwidth_samples_count": sample_count,
+        "audit_logs_count": audit_count,
+    })))
+}
+
+async fn test_ssh_handler() -> Result<Json<serde_json::Value>, StatusCode> {
+    let start = std::time::Instant::now();
+    let is_ssh = wg_engine::is_ssh_sync_enabled();
+    let target = wg_engine::get_ssh_target();
+
+    let output = if is_ssh {
+        let args = wg_engine::ssh_cmd_args(&target, "echo 'SSH_OK' && uname -srm && wg --version 2>&1 | head -n 1");
+        tokio::process::Command::new("ssh")
+            .args(&args)
+            .output()
+            .await
+    } else {
+        tokio::process::Command::new("sh")
+            .args(["-c", "echo 'LOCAL_OK' && uname -srm && wg --version 2>&1 | head -n 1"])
+            .output()
+            .await
+    };
+
+    let elapsed_ms = start.elapsed().as_millis() as u64;
+
+    match output {
+        Ok(out) => {
+            let stdout = String::from_utf8_lossy(&out.stdout).trim().to_string();
+            let stderr = String::from_utf8_lossy(&out.stderr).trim().to_string();
+            let success = out.status.success();
+            let combined = if stdout.is_empty() { stderr } else { stdout };
+
+            Ok(Json(serde_json::json!({
+                "success": success,
+                "latency_ms": elapsed_ms,
+                "target": if is_ssh { target } else { "Local Host".to_string() },
+                "output": combined
+            })))
+        }
+        Err(e) => {
+            Ok(Json(serde_json::json!({
+                "success": false,
+                "latency_ms": elapsed_ms,
+                "target": if is_ssh { target } else { "Local Host".to_string() },
+                "output": format!("Execution failed: {}", e)
+            })))
+        }
+    }
+}
+
+async fn get_db_stats_handler(State(store): State<DbStore>) -> Result<Json<serde_json::Value>, StatusCode> {
+    let db_path = std::env::var("DB_PATH").unwrap_or_else(|_| "wireguard_ui.db".into());
+    let db_size = std::fs::metadata(&db_path).map(|m| m.len()).unwrap_or(0);
+    let (sample_count, audit_count) = store.get_db_stats().unwrap_or((0, 0));
+
+    Ok(Json(serde_json::json!({
+        "db_path": db_path,
+        "db_size_bytes": db_size,
+        "bandwidth_samples_count": sample_count,
+        "audit_logs_count": audit_count,
+    })))
+}
+
+async fn download_db_backup_handler() -> Result<Response, StatusCode> {
+    let db_path = std::env::var("DB_PATH").unwrap_or_else(|_| "wireguard_ui.db".into());
+    let data = std::fs::read(&db_path).map_err(|_| StatusCode::NOT_FOUND)?;
+
+    let now = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_secs();
+
+    let filename = format!("wireguard_ui_backup_{}.db", now);
+
+    let mut headers = HeaderMap::new();
+    headers.insert(header::CONTENT_TYPE, "application/x-sqlite3".parse().unwrap());
+    headers.insert(
+        header::CONTENT_DISPOSITION,
+        format!("attachment; filename=\"{}\"", filename).parse().unwrap(),
+    );
+
+    Ok((headers, data).into_response())
+}
+
+#[derive(serde::Deserialize)]
+struct PrunePayload {
+    days: Option<i64>,
+}
+
+async fn prune_bandwidth_handler(
+    State(store): State<DbStore>,
+    Json(payload): Json<PrunePayload>,
+) -> Result<Json<serde_json::Value>, StatusCode> {
+    let days = payload.days.unwrap_or(7).max(1);
+    let seconds = days * 86400;
+    let deleted = store.prune_bandwidth_history(seconds).map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    let _ = store.add_audit_log(
+        "PRUNE_HISTORY",
+        "DATABASE",
+        &format!("Pruned {} bandwidth samples older than {} days", deleted, days),
+    );
+
+    Ok(Json(serde_json::json!({
+        "status": "success",
+        "deleted_count": deleted,
+        "message": format!("Successfully pruned {} samples older than {} days", deleted, days)
+    })))
 }
