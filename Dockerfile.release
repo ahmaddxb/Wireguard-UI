@@ -1,0 +1,22 @@
+# ==============================================================================
+# Ultra-fast Multi-Arch Release Image (Using pre-compiled musl binaries)
+# ==============================================================================
+FROM alpine:3.20
+
+RUN apk add --no-cache wireguard-tools iptables iproute2 ca-certificates bash curl openssh-client iperf3
+
+WORKDIR /app
+
+ARG TARGETARCH
+COPY bin/${TARGETARCH}/wireguard-ui /app/wireguard-ui
+RUN chmod +x /app/wireguard-ui
+
+ENV PORT=8080
+ENV RUST_LOG=wireguard_ui=info
+
+EXPOSE 8080/tcp
+EXPOSE 51820/udp
+EXPOSE 5201/tcp
+EXPOSE 5201/udp
+
+CMD ["/app/wireguard-ui"]

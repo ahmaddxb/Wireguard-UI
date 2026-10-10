@@ -90,7 +90,9 @@ jobs:
 
       - name: Install Cross (for aarch64)
         if: ${{ matrix.use_cross }}
-        run: cargo install cross --git https://github.com/cross-rs/cross
+        run: |
+          curl -sSL "https://github.com/cross-rs/cross/releases/download/v0.2.5/cross-x86_64-unknown-linux-musl.tar.gz" | tar -xz -C ~/.cargo/bin
+          chmod +x ~/.cargo/bin/cross
 
       - name: Cache Cargo Dependencies
         uses: actions/cache@v4
@@ -175,7 +177,7 @@ jobs:
   # ============================================================================
   docker-publish:
     name: Build & Push Docker Container
-    needs: check
+    needs: [check, build-binaries]
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     steps:
@@ -185,6 +187,26 @@ jobs:
       - name: Set lower case image name
         run: |
           echo "IMAGE_NAME=ghcr.io/$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+
+      - name: Download amd64 Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: wireguard-ui-linux-amd64
+          path: tmp-artifacts/amd64
+
+      - name: Download arm64 Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: wireguard-ui-linux-arm64
+          path: tmp-artifacts/arm64
+
+      - name: Prepare Pre-Built Binaries
+        run: |
+          mkdir -p bin/amd64 bin/arm64
+          tar -xzf tmp-artifacts/amd64/wireguard-ui-linux-amd64.tar.gz -C bin/amd64/
+          tar -xzf tmp-artifacts/arm64/wireguard-ui-linux-arm64.tar.gz -C bin/arm64/
+          chmod +x bin/amd64/wireguard-ui bin/arm64/wireguard-ui
+          ls -lh bin/amd64/wireguard-ui bin/arm64/wireguard-ui
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -215,6 +237,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
+          file: ./Dockerfile.release
           platforms: linux/amd64,linux/arm64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
