@@ -57,6 +57,11 @@ This document tracks upcoming features, architectural improvements, and planned 
 - [x] **MTU & MSS Clamping Controls**:
   - [x] Configurable MTU per interface / peer (e.g. `1280` for mobile 4G/5G compatibility).
   - [x] Automated TCP MSS clamping in `PostUp` firewall rules (`iptables -t mangle ... TCPMSS --clamp-mss-to-pmtu`).
+- [x] **Zero-Downtime Host Kernel Route Synchronization**:
+  - [x] Dynamic injection of peer subnets into host OS `ip route` via `ip route replace` alongside `wg syncconf`.
+  - [x] Connected subnet pool deduplication (suppresses redundant `/32` & `/128` client routes covered by interface IP pool).
+  - [x] Automated stale peer route pruning on deleted/edited routes while preserving `proto kernel` routes.
+  - [x] Strict default gateway safeguards (`0.0.0.0/0`, `::/0`, `default`).
 
 ---
 

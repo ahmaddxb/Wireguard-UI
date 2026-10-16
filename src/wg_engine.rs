@@ -406,8 +406,151 @@ pub fn build_site_config(
     conf
 }
 
+fn is_ip_in_pool_v4(cidr: &str, pool: &str) -> bool {
+    let parse_cidr = |s: &str| -> Option<(u32, u32)> {
+        let parts: Vec<&str> = s.split('/').collect();
+        if parts.is_empty() { return None; }
+        let ip: std::net::Ipv4Addr = parts[0].parse().ok()?;
+        let prefix: u32 = if parts.len() > 1 { parts[1].parse().ok()? } else { 32 };
+        if prefix > 32 { return None; }
+        let mask = if prefix == 0 { 0 } else { (!0u32) << (32 - prefix) };
+        Some((u32::from(ip), mask))
+    };
+
+    if let (Some((ip, _)), Some((pool_ip, pool_mask))) = (parse_cidr(cidr), parse_cidr(pool)) {
+        return (ip & pool_mask) == (pool_ip & pool_mask);
+    }
+    false
+}
+
+fn is_ip_in_pool_v6(cidr: &str, pool: &str) -> bool {
+    let parse_cidr = |s: &str| -> Option<(u128, u128)> {
+        let parts: Vec<&str> = s.split('/').collect();
+        if parts.is_empty() { return None; }
+        let ip: std::net::Ipv6Addr = parts[0].parse().ok()?;
+        let prefix: u32 = if parts.len() > 1 { parts[1].parse().ok()? } else { 128 };
+        if prefix > 128 { return None; }
+        let mask = if prefix == 0 { 0 } else { (!0u128) << (128 - prefix) };
+        Some((u128::from(ip), mask))
+    };
+
+    if let (Some((ip, _)), Some((pool_ip, pool_mask))) = (parse_cidr(cidr), parse_cidr(pool)) {
+        return (ip & pool_mask) == (pool_ip & pool_mask);
+    }
+    false
+}
+
+fn is_covered_by_interface_pool_v4(cidr: &str, pool_str: &str) -> bool {
+    let is_host = cidr.ends_with("/32") || !cidr.contains('/');
+    if !is_host {
+        return false;
+    }
+    for pool in pool_str.split(',') {
+        if is_ip_in_pool_v4(cidr, pool.trim()) {
+            return true;
+        }
+    }
+    false
+}
+
+fn is_covered_by_interface_pool_v6(cidr: &str, pool_opt: Option<&str>) -> bool {
+    let is_host = cidr.ends_with("/128") || !cidr.contains('/');
+    if !is_host {
+        return false;
+    }
+    if let Some(pool_str) = pool_opt {
+        for pool in pool_str.split(',') {
+            if is_ip_in_pool_v6(cidr, pool.trim()) {
+                return true;
+            }
+        }
+    }
+    false
+}
+
+pub fn build_route_sync_script(iface: &crate::models::WgInterface, peers: &[crate::models::WgPeer]) -> String {
+    let mut ipv4_routes: Vec<String> = Vec::new();
+    let mut ipv6_routes: Vec<String> = Vec::new();
+
+    for peer in peers {
+        if !peer.enabled {
+            continue;
+        }
+        for cidr_raw in peer.allowed_ips.split(',') {
+            let cidr = cidr_raw.trim();
+            if cidr.is_empty() {
+                continue;
+            }
+            // CRITICAL: Protect default gateway / host connectivity
+            if cidr == "0.0.0.0/0" || cidr == "::/0" || cidr.eq_ignore_ascii_case("default") {
+                continue;
+            }
+            if cidr.contains(':') {
+                // If it's a /128 client IP already covered by the interface connected IPv6 pool, skip adding redundant host route
+                if is_covered_by_interface_pool_v6(cidr, iface.address_pool_v6.as_deref()) {
+                    continue;
+                }
+                if !ipv6_routes.contains(&cidr.to_string()) {
+                    ipv6_routes.push(cidr.to_string());
+                }
+            } else if cidr.contains('.') {
+                // If it's a /32 client IP already covered by the interface connected IPv4 pool, skip adding redundant host route
+                if is_covered_by_interface_pool_v4(cidr, &iface.address_pool) {
+                    continue;
+                }
+                if !ipv4_routes.contains(&cidr.to_string()) {
+                    ipv4_routes.push(cidr.to_string());
+                }
+            }
+        }
+    }
+
+    let mut script = String::new();
+    // 1. Add / update all desired IPv4 routes
+    for r in &ipv4_routes {
+        script.push_str(&format!("ip -4 route replace {} dev {} 2>/dev/null || true\n", r, iface.id));
+    }
+    // 2. Add / update all desired IPv6 routes
+    for r in &ipv6_routes {
+        script.push_str(&format!("ip -6 route replace {} dev {} 2>/dev/null || true\n", r, iface.id));
+    }
+
+    // 3. Remove stale IPv4 routes (ignoring kernel-assigned interface addresses/subnets)
+    let v4_list = ipv4_routes.join(" ");
+    script.push_str(&format!(
+        "for cur in $(ip -4 route show dev {} 2>/dev/null | awk '$0 !~ /proto kernel/ {{print $1}}'); do\n\
+         found=0\n\
+         for wanted in __NONE__ {}; do\n\
+           if [ \"$cur\" = \"$wanted\" ] || [ \"${{cur}}/32\" = \"$wanted\" ]; then found=1; break; fi\n\
+         done\n\
+         if [ \"$found\" -eq 0 ]; then\n\
+           ip -4 route del \"$cur\" dev {} 2>/dev/null || true\n\
+         fi\n\
+       done\n",
+        iface.id, v4_list, iface.id
+    ));
+
+    // 4. Remove stale IPv6 routes (ignoring kernel-assigned link-local/subnets)
+    let v6_list = ipv6_routes.join(" ");
+    script.push_str(&format!(
+        "for cur in $(ip -6 route show dev {} 2>/dev/null | awk '$0 !~ /proto kernel/ {{print $1}}'); do\n\
+         found=0\n\
+         for wanted in __NONE__ {}; do\n\
+           if [ \"$cur\" = \"$wanted\" ] || [ \"${{cur}}/128\" = \"$wanted\" ]; then found=1; break; fi\n\
+         done\n\
+         if [ \"$found\" -eq 0 ]; then\n\
+           ip -6 route del \"$cur\" dev {} 2>/dev/null || true\n\
+         fi\n\
+       done\n",
+        iface.id, v6_list, iface.id
+    ));
+
+    script
+}
+
 pub fn apply_wireguard_config(iface: &crate::models::WgInterface, peers: &[crate::models::WgPeer], force_restart: bool) {
     let conf = build_server_config(iface, peers);
+    let route_script = build_route_sync_script(iface, peers);
 
     let conf_path = format!("/etc/wireguard/{}.conf", iface.id);
     if let Err(e) = std::fs::write(&conf_path, &conf) {
@@ -420,23 +563,17 @@ pub fn apply_wireguard_config(iface: &crate::models::WgInterface, peers: &[crate
         let ssh_target = get_ssh_target();
         let proxmox_cmd = if force_restart {
             format!(
-                "cat << 'EOF' > /etc/wireguard/{}.conf\n{}\nEOF\nwg-quick down {} 2>/dev/null; wg-quick up {} 2>/dev/null",
+                "cat << 'EOF' > /etc/wireguard/{0}.conf\n{1}\nEOF\nwg-quick down {0} 2>/dev/null; wg-quick up {0} 2>/dev/null\n{2}",
                 iface.id,
                 conf,
-                iface.id,
-                iface.id,
+                route_script,
             )
         } else {
             format!(
-                "cat << 'EOF' > /etc/wireguard/{}.conf\n{}\nEOF\nwg-quick strip {} > /tmp/{}_strip.conf 2>/dev/null && wg syncconf {} /tmp/{}_strip.conf 2>/dev/null || (wg-quick down {} 2>/dev/null; wg-quick up {} 2>/dev/null) 2>/dev/null",
+                "cat << 'EOF' > /etc/wireguard/{0}.conf\n{1}\nEOF\nwg-quick strip {0} > /tmp/{0}_strip.conf 2>/dev/null && wg syncconf {0} /tmp/{0}_strip.conf 2>/dev/null || (wg-quick down {0} 2>/dev/null; wg-quick up {0} 2>/dev/null) 2>/dev/null\n{2}",
                 &iface.id,
                 &conf,
-                &iface.id,
-                &iface.id,
-                &iface.id,
-                &iface.id,
-                &iface.id,
-                &iface.id,
+                &route_script,
             )
         };
         match std::process::Command::new("ssh")
@@ -458,16 +595,12 @@ pub fn apply_wireguard_config(iface: &crate::models::WgInterface, peers: &[crate
         }
     } else {
         let local_cmd = if force_restart {
-            format!("wg-quick down {} 2>/dev/null; wg-quick up {} 2>/dev/null", iface.id, iface.id)
+            format!("wg-quick down {0} 2>/dev/null; wg-quick up {0} 2>/dev/null\n{1}", iface.id, route_script)
         } else {
             format!(
-                "wg-quick strip {} > /tmp/{}_strip.conf 2>/dev/null && wg syncconf {} /tmp/{}_strip.conf 2>/dev/null || (wg-quick down {} 2>/dev/null; wg-quick up {} 2>/dev/null) 2>/dev/null || true",
+                "wg-quick strip {0} > /tmp/{0}_strip.conf 2>/dev/null && wg syncconf {0} /tmp/{0}_strip.conf 2>/dev/null || (wg-quick down {0} 2>/dev/null; wg-quick up {0} 2>/dev/null) 2>/dev/null || true\n{1}",
                 iface.id,
-                iface.id,
-                iface.id,
-                iface.id,
-                iface.id,
-                iface.id,
+                route_script
             )
         };
         let _ = std::process::Command::new("sh")
